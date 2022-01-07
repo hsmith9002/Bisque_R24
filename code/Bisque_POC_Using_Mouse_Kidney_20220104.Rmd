@@ -1,0 +1,76 @@
+---
+title: "Bisque_POC_Using_Mouse_Kidney"
+author: "Harry"
+date: "1/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+library(tidyverse)
+library(Biobase)
+library(BisqueRNA)
+library(data.table)
+```
+
+# Read in raw data from GEO
+
+```{r dataread, include=FALSE}
+# Read in singe cell RNA data
+path_to_scRNA_data <- "C:\\Users\\hsmit\\Documents\\Saba_Lab\\R24\\Bisque_R24\\rawdata\\GSE107585_series_matrix\\"
+
+file_name_scRNA_data <- "Mouse_kidney_single_cell_datamatrix.txt"
+
+scRNA_raw_data <- fread(paste0(path_to_scRNA_data, file_name_scRNA_data))
+
+
+# read in bulk RNA data
+path_to_bulkRNA_data <- "C:\\Users\\hsmit\\Documents\\Saba_Lab\\R24\\Bisque_R24\\rawdata\\GSE81492_series_matrix\\"
+
+bulk_file_names_list <- list.files(path = path_to_bulkRNA_data)
+
+GSM2154800_G1NF_42 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[2]))
+colnames(GSM2154800_G1NF_42)[c(1,2)] <- c("Transcript_ID", "G1NF_42")
+GSM2154801_GINF_44 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[3]))
+colnames(GSM2154801_GINF_44)[c(1,2)] <- c("Transcript_ID", "GINF_44")
+GSM2154802_GNA_73 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[4]))
+colnames(GSM2154802_GNA_73)[c(1,2)] <- c("Transcript_ID", "GNA_73")
+GSM2154803_GNA_78M <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[5]))
+colnames(GSM2154803_GNA_78M)[c(1,2)] <- c("Transcript_ID", "GNA_78M")
+GSM2154804_G1NF_28 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[6]))
+colnames(GSM2154804_G1NF_28)[c(1,2)] <- c("Transcript_ID", "G1NF_28")
+GSM2154805_GNA1_18 <-fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[7]))
+colnames(GSM2154805_GNA1_18)[c(1,2)] <- c("Transcript_ID", "GNA1_18")
+GSM2154806_NA_27 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[8]))
+colnames(GSM2154806_NA_27)[c(1,2)] <- c("Transcript_ID", "NA_27")
+GSM2154807_NA_30 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[9]))
+colnames(GSM2154807_NA_30)[c(1,2)] <- c("Transcript_ID", "NA_30")
+GSM2154808_NA_39 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[10]))
+colnames(GSM2154808_NA_39)[c(1,2)] <- c("Transcript_ID", "NA_39")
+GSM2154809_NAP_3 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[11]))
+colnames(GSM2154809_NAP_3)[c(1,2)] <- c("Transcript_ID", "NAP_3")
+
+# merge bulk data files into one table
+# first, we put all the data tables into a list
+bulk_RNA_Data_list <- list(GSM2154800_G1NF_42,
+                           GSM2154801_GINF_44,
+                           GSM2154802_GNA_73,
+                           GSM2154803_GNA_78M,
+                           GSM2154804_G1NF_28,
+                           GSM2154805_GNA1_18,
+                           GSM2154806_NA_27,
+                           GSM2154807_NA_30,
+                           GSM2154808_NA_39,
+                           GSM2154809_NAP_3)
+
+# Now we can use the reduce function to merge all data sets at once
+# For Inner Join
+bulkRNA_raw_data <- Reduce(
+  function(x, y, ...) merge(x, y, ...), 
+  bulk_RNA_Data_list
+)
+
+
+```
