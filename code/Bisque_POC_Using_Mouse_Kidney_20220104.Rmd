@@ -32,25 +32,25 @@ path_to_bulkRNA_data <- "C:\\Users\\hsmit\\Documents\\Saba_Lab\\R24\\Bisque_R24\
 bulk_file_names_list <- list.files(path = path_to_bulkRNA_data)
 
 GSM2154800_G1NF_42 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[2]))
-colnames(GSM2154800_G1NF_42)[c(1,2)] <- c("Transcript_ID", "G1NF_42")
+colnames(GSM2154800_G1NF_42)[c(1,2)] <- c("Gene_ID", "G1NF_42")
 GSM2154801_GINF_44 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[3]))
-colnames(GSM2154801_GINF_44)[c(1,2)] <- c("Transcript_ID", "GINF_44")
+colnames(GSM2154801_GINF_44)[c(1,2)] <- c("Gene_ID", "GINF_44")
 GSM2154802_GNA_73 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[4]))
-colnames(GSM2154802_GNA_73)[c(1,2)] <- c("Transcript_ID", "GNA_73")
+colnames(GSM2154802_GNA_73)[c(1,2)] <- c("Gene_ID", "GNA_73")
 GSM2154803_GNA_78M <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[5]))
-colnames(GSM2154803_GNA_78M)[c(1,2)] <- c("Transcript_ID", "GNA_78M")
+colnames(GSM2154803_GNA_78M)[c(1,2)] <- c("Gene_ID", "GNA_78M")
 GSM2154804_G1NF_28 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[6]))
-colnames(GSM2154804_G1NF_28)[c(1,2)] <- c("Transcript_ID", "G1NF_28")
+colnames(GSM2154804_G1NF_28)[c(1,2)] <- c("Gene_ID", "G1NF_28")
 GSM2154805_GNA1_18 <-fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[7]))
-colnames(GSM2154805_GNA1_18)[c(1,2)] <- c("Transcript_ID", "GNA1_18")
+colnames(GSM2154805_GNA1_18)[c(1,2)] <- c("Gene_ID", "GNA1_18")
 GSM2154806_NA_27 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[8]))
-colnames(GSM2154806_NA_27)[c(1,2)] <- c("Transcript_ID", "NA_27")
+colnames(GSM2154806_NA_27)[c(1,2)] <- c("Gene_ID", "NA_27")
 GSM2154807_NA_30 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[9]))
-colnames(GSM2154807_NA_30)[c(1,2)] <- c("Transcript_ID", "NA_30")
+colnames(GSM2154807_NA_30)[c(1,2)] <- c("Gene_ID", "NA_30")
 GSM2154808_NA_39 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[10]))
-colnames(GSM2154808_NA_39)[c(1,2)] <- c("Transcript_ID", "NA_39")
+colnames(GSM2154808_NA_39)[c(1,2)] <- c("Gene_ID", "NA_39")
 GSM2154809_NAP_3 <- fread(paste0(path_to_bulkRNA_data, bulk_file_names_list[11]))
-colnames(GSM2154809_NAP_3)[c(1,2)] <- c("Transcript_ID", "NAP_3")
+colnames(GSM2154809_NAP_3)[c(1,2)] <- c("Gene_ID", "NAP_3")
 
 # merge bulk data files into one table
 # first, we put all the data tables into a list
@@ -71,6 +71,25 @@ bulkRNA_raw_data <- Reduce(
   function(x, y, ...) merge(x, y, ...), 
   bulk_RNA_Data_list
 )
+
+# clean up gene ID column. Remove the version ids from the gene ids
+bulkRNA_raw_data$Gene_ID <- gsub("\\..*", "", bulkRNA_raw_data$Gene_ID)
+
+# now we need to merge the GEO data with the mus Ensembl reference since the single 
+# cell data uses gene names and the bulk data uses transcript_
+path_to_ensembl_ref <- "C:\\Users\\hsmit\\Documents\\Saba_Lab\\R24\\Bisque_R24\\rawdata\\"
+ensembl_ref <- fread(paste0(path_to_ensembl_ref, "Ensembl_Mouse_Annotation_20220107.txt"))
+# remove unneeded columns from ref
+ensembl_ref <- ensembl_ref %>% select("Gene stable ID",
+                                      "Gene name",
+                                      "Gene type")
+# Merge ref data with bulk data
+bulkRNA_withref_data <- merge(bulkRNA_raw_data, ensembl_ref,
+                              by.x = "Gene_ID", 
+                              by.y = "Gene stable ID")
+# remove duplicates
+bulkRNA_withref_data <- bulkRNA_withref_data %>% 
+  distinct()
 
 
 ```
