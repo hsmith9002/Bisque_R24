@@ -90,6 +90,62 @@ bulkRNA_withref_data <- merge(bulkRNA_raw_data, ensembl_ref,
 # remove duplicates
 bulkRNA_withref_data <- bulkRNA_withref_data %>% 
   distinct()
+# make row names = gene names and remove any annotated columns
+bulkRNA_Data_for_eset <- bulkRNA_withref_data[, -c(1, 13)]
+bulkRNA_Data_for_eset <- bulkRNA_Data_for_eset[!duplicated(bulkRNA_Data_for_eset$`Gene name`), ]
+row.names(bulkRNA_Data_for_eset) <- bulkRNA_Data_for_eset$`Gene name`
+bulkRNA_rnames <- rownames(bulkRNA_Data_for_eset)
+bulkRNA_Data_for_eset <- as.matrix(bulkRNA_Data_for_eset[, -c(11)])
+row.names(bulkRNA_Data_for_eset) <- bulkRNA_rnames
+```
 
+# Get raw data into required eset formatting
+
+```{r, reformat_data, include=FALSE}
+# transform bulk data into an eset data class
+bulkRNA_sample_ids <- colnames(bulkRNA_Data_for_eset)
+bulkRNA_subject_names <- c("Kidney_G1-APOL1_risk allele",
+                           "Kidney_G1-APOL1_risk allele",
+                           "Kidney_G2-APOL1_risk allele",
+                           "Kidney_G2-APOL1_risk allele",
+                           "Kidney_wildtype",
+                           "Kidney_wildtype",
+                           "Kidney_wildtype",
+                           "Kidney_Control",
+                           "Kidney_Control",
+                           "Kidney_Control")
+bulkRNA_pheno <- data.frame(check.names=F, check.rows=F,
+                       stringsAsFactors=F,
+                       row.names=bulkRNA_sample_ids,
+                       SubjectName=bulkRNA_sample_ids,
+                       subjectGenotype=bulkRNA_subject_names)
+bulkRNA_meta <- data.frame(labelDescription=c("SubjectName",
+                                         "SubjectGenotype"),
+                      row.names=c("SubjectName",
+                                  "SubjectGenotype"))
+bulkRNA_pdata <- new("AnnotatedDataFrame",
+                data=bulkRNA_pheno,
+                varMetadata=bulkRNA_meta)
+bulkRNA_eset <- Biobase::ExpressionSet(assayData=bulkRNA_Data_for_eset,
+                                  phenoData=bulkRNA_pdata)
+
+
+# transform single cell data into eset data class with meta data
+sample.ids <- colnames(sc.counts.matrix)
+# individual.ids and cell.types should be in the same order as in sample.ids
+sc.pheno <- data.frame(check.names=F, check.rows=F,
+                       stringsAsFactors=F,
+                       row.names=sample.ids,
+                       SubjectName=individual.labels,
+                       cellType=cell.type.labels)
+sc.meta <- data.frame(labelDescription=c("SubjectName",
+                                         "cellType"),
+                      row.names=c("SubjectName",
+                                  "cellType"))
+sc.pdata <- new("AnnotatedDataFrame",
+                data=sc.pheno,
+                varMetadata=sc.meta)
+sc.eset <- Biobase::ExpressionSet(assayData=bulkRNA_Data_for_eset,
+                                  phenoData=sc.pdata)
 
 ```
