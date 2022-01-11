@@ -166,4 +166,7 @@ path_to_eset_objects <- path_to_scRNA_data
 bulkRNA_eset <- readRDS(paste0(path_to_eset_objects, "Mousebulkeset.rds"))
 scRNA_eset <-  readRDS(paste0(path_to_eset_objects, "Mousesubeset.rds"))
 
+# run bisque decomposition
+res <- BisqueRNA::ReferenceBasedDecomposition(bulkRNA_eset, scRNA_eset, markers=NULL, use.overlap=FALSE)
+
 ```
