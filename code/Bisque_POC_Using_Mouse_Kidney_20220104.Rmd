@@ -169,4 +169,8 @@ scRNA_eset <-  readRDS(paste0(path_to_eset_objects, "Mousesubeset.rds"))
 # run bisque decomposition
 res <- BisqueRNA::ReferenceBasedDecomposition(bulkRNA_eset, scRNA_eset, markers=NULL, use.overlap=FALSE)
 
+# check results
+ref.based.estimates <- as.data.frame(res$bulk.props)
+knitr::kable(ref.based.estimates, digits=2)
+
 ```
