@@ -1,0 +1,68 @@
+---
+title: "Workflow for cellrnager analysis"
+author: "Harry Smith"
+date: "2/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+# File locations
+
+All files are on sysgen. Here are the specific directories housing the necessary files for running scraps pipeline:
+
+1. FASTQ Files: /data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads
+2. STAR Index: /data/rn7/index/genomes_STAR/BN
+3. Chromium V3 Whitelist: "ref/3M-february-2018.txt"
+4. Chromium V2 Whitelist:  "ref/737K-august-2016.txt"
+5. polya_db: /ref/rat.PAS.gtf
+
+# Cellranger analysis
+
+Below are the command line cellranger calls used to generate the initial results from the raw single cell data.
+Cellranger Version: 6.1.2
+
+## First we have to build a cellranger compatible reference
+```
+# Build reference
+cellranger mkref \
+  --genome=rn7.2_genome \
+  --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
+  --genes=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/refseqExport7.gff
+
+cellranger mkref \
+  --genome=rn7.2_genome \
+  --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
+  --genes=/data/home/roseans/Reference_Transcriptomes/Refseq/RNOR7/refseqExport7.gff
+
+cellranger mkref \
+  --genome=rn7.2_genome \
+  --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
+  --genes=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/Rattus_norvegicus.mRatBN7.2.105_HS.gtf
+  
+cellranger mkref \
+  --genome=rn7.2_genome \
+  --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
+  --genes=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7_ncbiRefSeq_fromUCSC_filtered.gtf
+  
+
+
+
+
+```
+
+```
+# Sample: 1_BNLx_1_Neurons
+## Targeted 10,000 cells
+
+cellranger count --id=1_BNLx_1_Neurons \
+                   --transcriptome=/data/rn7/index/genomes_STAR/BN \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=1_BNLx_1_Neurons \
+                   --expect-cells=10000 \
+                   --localcores=16 \
+                   --localmem=64

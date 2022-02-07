@@ -1,0 +1,22 @@
+---
+title: "Work flow for scraps Analysis"
+author: "Harry Smith"
+date: "2/2/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+# File locations
+
+All files are on sysgen. Here are the specific directories housing the necessary files for running scraps pipeline:
+
+1. FASTQ Files: /data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads
+2. STAR Index: /data/rn7/index/genomes_STAR/BN
+3. Chromium V3 Whitelist: "ref/3M-february-2018.txt"
+4. Chromium V2 Whitelist:  "ref/737K-august-2016.txt"
+5. polya_db: /ref/rat.PAS.gtf
