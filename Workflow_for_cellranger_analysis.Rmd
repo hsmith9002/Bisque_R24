@@ -42,10 +42,11 @@ cellranger mkref \
 
 cellranger count --id=1_BNLx_1_Neurons \
                    --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome/ \
-                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --fastqs=/data/home/smiharry/Saba_Lab/R24/fastqs \
                    --sample=1_BNLx_1_Neurons \
                    --expect-cells=10000 \
                    --localcores=24 \
-                   --localmem=64
+                   --localmem=64 \
+                   --chemistry=threeprime
                    
 ```
