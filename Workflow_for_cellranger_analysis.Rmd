@@ -29,30 +29,11 @@ Cellranger Version: 6.1.2
 ## First we have to build a cellranger compatible reference
 ```
 # Build reference
-cellranger mkref \
-  --genome=rn7.2_genome \
-  --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
-  --genes=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/refseqExport7.gff
-
-cellranger mkref \
-  --genome=rn7.2_genome \
-  --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
-  --genes=/data/home/roseans/Reference_Transcriptomes/Refseq/RNOR7/refseqExport7.gff
-
-cellranger mkref \
-  --genome=rn7.2_genome \
-  --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
-  --genes=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/Rattus_norvegicus.mRatBN7.2.105_HS.gtf
   
 cellranger mkref \
   --genome=rn7.2_genome \
   --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
-  --genes=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7_ncbiRefSeq_fromUCSC_filtered.gtf
-  
-
-
-
-
+  --genes=/data/rn7/index/ref_transcriptomes/rn7_ncbiRefSeq_fromUCSC.cleaned.gtf
 ```
 
 ```
@@ -60,9 +41,11 @@ cellranger mkref \
 ## Targeted 10,000 cells
 
 cellranger count --id=1_BNLx_1_Neurons \
-                   --transcriptome=/data/rn7/index/genomes_STAR/BN \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome/ \
                    --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
                    --sample=1_BNLx_1_Neurons \
                    --expect-cells=10000 \
-                   --localcores=16 \
+                   --localcores=24 \
                    --localmem=64
+                   
+```
