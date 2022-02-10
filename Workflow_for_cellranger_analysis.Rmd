@@ -34,19 +34,69 @@ cellranger mkref \
   --genome=rn7.2_genome \
   --fasta=/data/rn7/index/genomes/rn7.2.cleaned.fa \
   --genes=/data/rn7/index/ref_transcriptomes/rn7_ncbiRefSeq_fromUCSC.cleaned.gtf
+  
+cellranger-arc mkref --config=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.config
 ```
 
 ```
 # Sample: 1_BNLx_1_Neurons
 ## Targeted 10,000 cells
-
 cellranger count --id=1_BNLx_1_Neurons \
-                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome/ \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
                    --fastqs=/data/home/smiharry/Saba_Lab/R24/fastqs \
                    --sample=1_BNLx_1_Neurons \
                    --expect-cells=10000 \
-                   --localcores=24 \
+                   --localcores=20 \
                    --localmem=64 \
-                   --chemistry=threeprime
+                   --include-introns \
+                   --chemistry=ARC-v1 \
+                   --lanes=2
+                   
+### Output files can be found here: /data/home/smiharry/Saba_Lab/R24/cellrangerResults/1_BNLx_1_Neurons/
+
+# Sample: 3_BNLx_2_Neurons
+## Targeted 10,000 cells                   
+cellranger count --id=3_BNLx_2_Neurons \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=3_BNLx_2_Neurons \
+                   --expect-cells=10000 \
+                   --localcores=12 \
+                   --localmem=64 \
+                   --include-introns \
+                   --chemistry=ARC-v1
+ 
+ # Sample: 5_SHR_1_Neurons
+## Targeted 10,000 cells                  
+cellranger count --id=5_SHR_1_Neurons \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=5_SHR_1_Neurons \
+                   --expect-cells=10000 \
+                   --localcores=12 \
+                   --localmem=64 \
+                   --include-introns \
+                   --chemistry=ARC-v1 
+                  
+
+# Sample: 7_SHR_2_Neurons
+## Targeted 10,000 cells                   
+cellranger count --id=7_SHR_2_Neurons \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=7_SHR_2_Neurons \
+                   --expect-cells=10000 \
+                   --localcores=12 \
+                   --localmem=64 \
+                   --include-introns \
+                   --chemistry=ARC-v1 
+```
+
+```
+cellranger-arc count --id=1_BNLx_1_Neurons \
+                   --reference=/data/rn7/index_cellRangerArc/Rn7 \
+                   --libraries=/data/home/smiharry/Saba_Lab/R24/fastqs/libraries.csv \
+                   --localcores=20 \
+                   --localmem=64
                    
 ```
