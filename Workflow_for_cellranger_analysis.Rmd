@@ -65,6 +65,8 @@ cellranger count --id=3_BNLx_2_Neurons \
                    --localmem=64 \
                    --include-introns \
                    --chemistry=ARC-v1
+                   
+### Output files can be found here: /data/home/smiharry/Saba_Lab/R24/cellrangerResults/3_BNLx_2_Neurons/
  
  # Sample: 5_SHR_1_Neurons
 ## Targeted 10,000 cells                  
@@ -77,7 +79,8 @@ cellranger count --id=5_SHR_1_Neurons \
                    --localmem=64 \
                    --include-introns \
                    --chemistry=ARC-v1 
-                  
+
+### Output files can be found here: /data/home/smiharry/Saba_Lab/R24/cellrangerResults/5_SHR_1_Neurons/                  
 
 # Sample: 7_SHR_2_Neurons
 ## Targeted 10,000 cells                   
@@ -86,10 +89,17 @@ cellranger count --id=7_SHR_2_Neurons \
                    --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
                    --sample=7_SHR_2_Neurons \
                    --expect-cells=10000 \
-                   --localcores=12 \
+                   --localcores=20 \
                    --localmem=64 \
                    --include-introns \
                    --chemistry=ARC-v1 
+                   
+### Output files can be found here: /data/home/smiharry/Saba_Lab/R24/cellrangerResults/7_SHR_2_Neurons/
+
+## Merge samples
+cellranger aggr --id=neurons_merged \
+                  --csv=agg_neurons.csv \
+                  --normalize=mapped
 ```
 
 ```
