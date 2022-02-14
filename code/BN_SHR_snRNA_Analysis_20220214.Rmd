@@ -30,7 +30,7 @@ library(R.utils)
 library(viridis)
 library(patchwork)
 
-data_dir <- "/Users/smithh/Documents/Saba_Lab/cellranger_results/neurons_merged/outs/count/filtered_feature_bc_matrix"
+data_dir <- "/Users/smithh/Documents/Saba_Lab/cellranger_results"
 tcols <- rev(brewer.pal(11, "RdGy")[c(1:5, 7)])[1:6]
 ```
 
@@ -44,21 +44,22 @@ SHR | SHR Strain
 ```{r in_data}
 
 samples <- c(
-  "BNLx",
-  "SHR")
+  "BNLx_merged",
+  "SHR_merged")
 
-sample_paths <- file.path(data_dir )
+sample_paths <- file.path(data_dir ,
+                          samples)
 
-#names(sample_paths) <- samples
+names(sample_paths) <- samples
 
 bcells <- Seurat::Read10X(sample_paths)
 ```
 
 ```{r create_seurat, message = F, results = 'hide', warning = F}
-bcells <- CreateSeuratObject(raw.data = bcells, 
-                              min.cells = 5,
-                              min.genes = 250, 
-                              project = "Russ",
+bcells <- CreateSeuratObject(counts = bcells, 
+                              min.cells = 3,
+                              min.genes = 200, 
+                              project = "Saba",
                               names.field = c(1,2), 
                               names.delim = "_")
 ```
@@ -66,9 +67,9 @@ bcells <- CreateSeuratObject(raw.data = bcells,
 ```{r additional_mdata}
 
 # add correct sample identifier
-ids <- bcells@cell.names
+ids <- colnames(bcells@assays$RNA@data)
 ids <- str_split(ids, "_[ATCG]{10}", simplify = T) %>% .[, 1]
-ids <- data.frame(row.names = bcells@cell.names,
+ids <- data.frame(row.names = colnames(bcells@assays$RNA@data),
                   expt = ids)
 bcells <- AddMetaData(bcells, ids)
 ```
@@ -76,10 +77,10 @@ bcells <- AddMetaData(bcells, ids)
 ## QC Metrics
   
 ```{r examine_umi_and_ngenes, fig.width = 10, fig.height = 8, warning = F}
-summary_dat <- data_frame(cell = colnames(bcells@raw.data), 
+summary_dat <- data_frame(cell = colnames(bcells@assays$RNA@data), 
                           expt = bcells@meta.data$expt,
-                          nUMIs = colSums(as.matrix(bcells@raw.data)),
-                          nGenes = colSums(as.matrix(bcells@raw.data) > 0))
+                          nUMIs = colSums(as.matrix(bcells@assays$RNA@data)),
+                          nGenes = colSums(as.matrix(bcells@assays$RNA@data) > 0))
 
 summary_dat <- summary_dat %>% 
   group_by(expt) %>% 
@@ -108,19 +109,19 @@ b <- ggplot(summary_dat, aes(expt, nGenes)) +
 plot_grid(a, b, ncol = 1)
 ```
 
-Overall the numbers of UMIs and genes detected are good and in the expected range for single cell data. 
+
 
 ```{r write_matrix, eval = F}
-dir.create("count_matrix", showWarnings = FALSE)
-
-write.table(as.matrix(bcells@raw.data), 
-            file.path("count_matrix", "all_samples_raw_counts_matrix.txt"),
-            quote = F, sep = "\t")
-
-gzip(file.path("count_matrix", 
-               "all_samples_raw_counts_matrix.txt"),
-     overwrite = TRUE,
-     remove = TRUE)
+# dir.create("count_matrix", showWarnings = FALSE)
+# 
+# write.table(as.matrix(bcells@raw.data), 
+#             file.path("count_matrix", "all_samples_raw_counts_matrix.txt"),
+#             quote = F, sep = "\t")
+# 
+# gzip(file.path("count_matrix", 
+#                "all_samples_raw_counts_matrix.txt"),
+#      overwrite = TRUE,
+#      remove = TRUE)
 ```
 
 ```{r utility_fxn}

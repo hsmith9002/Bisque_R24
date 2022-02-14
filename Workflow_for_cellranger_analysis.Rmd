@@ -113,6 +113,16 @@ cellranger count --id=7_SHR_2_Neurons_2Lanes \
 cellranger aggr --id=neurons_merged \
                   --csv=agg_neurons.csv \
                   --normalize=mapped
+                  
+## Merge BnLx samples - Be sure to update .csv to only include BNLx sample paths
+cellranger aggr --id=BNLx_merged \
+                  --csv=agg_neurons.csv \
+                  --normalize=mapped
+                  
+## Merge SHR samples - Be sure to update .csv to only include SHR sample paths
+cellranger aggr --id=SHR_merged \
+                  --csv=agg_neurons.csv \
+                  --normalize=mapped
 ```
 
 ```
