@@ -96,6 +96,19 @@ cellranger count --id=7_SHR_2_Neurons \
                    
 ### Output files can be found here: /data/home/smiharry/Saba_Lab/R24/cellrangerResults/7_SHR_2_Neurons/
 
+# Sample: 7_SHR_2_Neurons, but trying with --lanes arg to see if that increases the read depth
+## Targeted 10,000 cells                   
+cellranger count --id=7_SHR_2_Neurons_2Lanes \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=7_SHR_2_Neurons \
+                   --expect-cells=10000 \
+                   --localcores=24 \
+                   --localmem=64 \
+                   --include-introns \
+                   --chemistry=ARC-v1 \
+                   --lanes=2
+
 ## Merge samples
 cellranger aggr --id=neurons_merged \
                   --csv=agg_neurons.csv \
