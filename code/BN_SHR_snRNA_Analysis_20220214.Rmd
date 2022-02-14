@@ -251,12 +251,10 @@ for(i in seq_along(per_sample)){
 ### GFP/LUC counts
 ```{r GFP_counts}
 
-VlnPlot(bcells, 
-        c("egfp", "luc-firefly"),
-        cols.use = brewer.pal(n = 10, "Paired"), 
-        group.by = "expt",
-        x.lab.rot = T,
-        y.log = T)
+# VlnPlot(bcells, 
+#         c("egfp", "luc-firefly"),
+#         cols = brewer.pal(n = 10, "Paired"), 
+#         group.by = "expt")
 
 ```
 
@@ -268,29 +266,31 @@ VlnPlot(bcells,
 
 ```{r normalize, results = 'hide'}
 
-library(scran)
+bcells <- NormalizeData(bcells, normalization.method = "LogNormalize", scale.factor = 10000)
 
-sce <- SingleCellExperiment(list(counts = bcells@raw.data[rownames(bcells@data),
-                                                          rownames(bcells@meta.data)]))
+#library(scran)
 
-qclusters <- quickCluster(counts(sce), method = "igraph", min.size = 50)
-sce <- computeSumFactors(sce, 
-                         sizes = seq(20, 100, 5),
-                         cluster = qclusters, 
-                         min.mean = 0.1)
-
-# return normalize non-log values (log2 is default for scran, log for seurat)
-sce <- scater::normalize(sce, 
-                         return_log = F, 
-                         log_exprs_offset = 0)    
-# add pseudocount of 1 consistent with seurat
-bcells@data <- assay(sce, "normcounts") %>% 
-  log1p(.) %>% 
-  as(., "sparseMatrix")
-
-# all seurat calc paramters are stored and occasionally checked
-# add normalization method to avoid warnings
-bcells@calc.params[["NormalizeData"]] <- list(normalization.method = "scran::computeSumFactors")
+# sce <- SingleCellExperiment(list(counts = bcells@raw.data[rownames(bcells@data),
+#                                                           rownames(bcells@meta.data)]))
+# 
+# qclusters <- quickCluster(counts(sce), method = "igraph", min.size = 50)
+# sce <- computeSumFactors(sce, 
+#                          sizes = seq(20, 100, 5),
+#                          cluster = qclusters, 
+#                          min.mean = 0.1)
+# 
+# # return normalize non-log values (log2 is default for scran, log for seurat)
+# sce <- scater::normalize(sce, 
+#                          return_log = F, 
+#                          log_exprs_offset = 0)    
+# # add pseudocount of 1 consistent with seurat
+# bcells@data <- assay(sce, "normcounts") %>% 
+#   log1p(.) %>% 
+#   as(., "sparseMatrix")
+# 
+# # all seurat calc paramters are stored and occasionally checked
+# # add normalization method to avoid warnings
+# bcells@calc.params[["NormalizeData"]] <- list(normalization.method = "scran::computeSumFactors")
 
 ```
 
