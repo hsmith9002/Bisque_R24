@@ -149,6 +149,8 @@ proportion.mito <- Matrix::colSums(bcells@assays$RNA@data[mito.genes, ]) /
 
 bcells <- AddMetaData(bcells, proportion.mito, "proportion.mito")
 
+bcells[["percent.mt"]] <- PercentageFeatureSet(bcells, pattern = mito_gene_list)
+
 unfiltered <- bcells@meta.data %>% 
   tibble::rownames_to_column("cell") %>% 
   left_join(summary_dat, by = c("cell", "expt")) %>% 
@@ -192,6 +194,14 @@ for(i in seq_along(per_sample)){
   print(p)
   cat('\n')
 }
+
+# Visualize QC metrics as a violin plot
+for(i in seq_along(per_sample)){
+  .col <- brewer.pal(10, "Paired")[i]
+  cat('\n### ', sample_names[i], '\n')
+  print(VlnPlot(bcells, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3))
+  cat('\n')
+}
 ```
 
 Cells with low UMIs tend to have a higher percentage of mitochondrial reads, suggesting that these cells have lysed prematurely. However, overall a large proportion of cells are retained for further analysis after removing cells with > 20% UMIs derived from mitochondiral transcripts. 
@@ -201,39 +211,40 @@ Cells with low UMIs tend to have a higher percentage of mitochondrial reads, sug
 After filtering the distribution of UMIs, Genes, and Proportion of mitochondrial reads are shown as selectable tabs. 
 
 ```{r, apply_filters}
-bcells <- FilterCells(bcells, 
-                       subset.names = c("nUMI", "proportion.mito"), 
-                       low.thresholds = c(250, -Inf), 
-                       high.thresholds = c(50000, 0.20))
+bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 10000 & percent.mt < 20)
 ```
 
 ```{r ngenes_filter}
-knitr::kable(cell_counts(SetAllIdent(bcells, "expt")),
-             caption = "Number of cells passing an additional filter requiring less than 20% mitochondrial reads and at least 250 genes detected, and UMI < 50000")
+# knitr::kable(cell_counts(SetAllIdent(bcells, "expt")),
+#              caption = "Number of cells passing an additional filter requiring less than 20% mitochondrial reads and at least 250 genes detected, and UMI < 2500")
 ```
 
-### Number of Genes
+### Post filtering violin plots
 ```{r ngenes_post_filter}
-VlnPlot(bcells, "nGene", 
-        cols.use = brewer.pal(10, "Paired"),
-        group.by = "expt",
-        x.lab.rot = T)
+for(i in seq_along(per_sample)){
+  .col <- brewer.pal(10, "Paired")[i]
+  cat('\n### ', sample_names[i], '\n')
+  print(VlnPlot(bcells, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, 
+        cols = brewer.pal(10, "Paired"),
+        group.by = "expt"))
+  cat('\n')
+}
 ```
 
 ### Number of UMIs
 ```{r}
-VlnPlot(bcells, "nUMI", 
-        cols.use = brewer.pal(10, "Paired"),
-        group.by = "expt",
-        x.lab.rot = T)
+# VlnPlot(bcells, "nUMI", 
+#         cols.use = brewer.pal(10, "Paired"),
+#         group.by = "expt",
+#         x.lab.rot = T)
 ```
 
 ### Proportion of Mitochondria
 ```{r}
-VlnPlot(bcells, "proportion.mito", 
-        cols.use = brewer.pal(10, "Paired"),
-        group.by = "expt",
-        x.lab.rot = T)
+# VlnPlot(bcells, "proportion.mito", 
+#         cols.use = brewer.pal(10, "Paired"),
+#         group.by = "expt",
+#         x.lab.rot = T)
 
 ```
 
