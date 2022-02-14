@@ -112,16 +112,16 @@ plot_grid(a, b, ncol = 1)
 
 
 ```{r write_matrix, eval = F}
-# dir.create("count_matrix", showWarnings = FALSE)
-# 
-# write.table(as.matrix(bcells@raw.data), 
-#             file.path("count_matrix", "all_samples_raw_counts_matrix.txt"),
-#             quote = F, sep = "\t")
-# 
-# gzip(file.path("count_matrix", 
-#                "all_samples_raw_counts_matrix.txt"),
-#      overwrite = TRUE,
-#      remove = TRUE)
+dir.create("/Users/smithh/Documents/Saba_Lab/cellranger_results/count_matrix", showWarnings = FALSE)
+
+write.table(as.matrix(bcells@assays$RNA@data),
+            file.path("/Users/smithh/Documents/Saba_Lab/cellranger_results/count_matrix", "all_samples_raw_counts_matrix.txt"),
+            quote = F, sep = "\t")
+
+gzip(file.path("/Users/smithh/Documents/Saba_Lab/cellranger_results/count_matrix",
+               "all_samples_raw_counts_matrix.txt"),
+     overwrite = TRUE,
+     remove = TRUE)
 ```
 
 ```{r utility_fxn}
@@ -138,9 +138,14 @@ cell_counts <- function(seurat_object){
 The percentage of reads aligning to mitochondria is often an indicator of cell quality. Cells that have lysed prior to capture preferentially retain mitochondial RNA, but lose cellular cytoplasmic mRNA. As shown below there is a strong negative correlation with the number of UMIs and the proportion of reads aligning to mitochondria. Cells with less than 20% mitochondrial reads will be retained for further analysis.
 
 ```{r QC}
-mito.genes <- grep("^MT-", rownames(bcells@data), value = T)
-proportion.mito <- Matrix::colSums(bcells@raw.data[mito.genes, ]) /
-  Matrix::colSums(bcells@raw.data)
+# there are not unique IDs for mito genes in refseq, so I  am using this gene list
+
+mito_gene_list <- c("ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6")
+mito_gene_list <- paste0(mito_gene_list, collapse = "|")
+
+mito.genes <- grep(mito_gene_list, rownames(bcells@assays$RNA@data), value = T)
+proportion.mito <- Matrix::colSums(bcells@assays$RNA@data[mito.genes, ]) /
+  Matrix::colSums(bcells@assays$RNA@data)
 
 bcells <- AddMetaData(bcells, proportion.mito, "proportion.mito")
 
