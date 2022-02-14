@@ -168,10 +168,10 @@ ggplot(unfiltered, aes(expt,
 ### All Samples
 
 ```{r sample_ids}
-ggplot(unfiltered, 
-       aes(nUMI, proportion.mito)) +
-  geom_point(aes(color = expt)) +
-  scale_color_brewer(palette = "Paired")
+# ggplot(unfiltered, 
+#        aes(nUMI, proportion.mito)) +
+#   geom_point(aes(color = expt)) +
+#   scale_color_brewer(palette = "Paired")
 ```
 
 ```{r, results ='asis'}
