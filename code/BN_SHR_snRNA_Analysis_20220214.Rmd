@@ -60,7 +60,7 @@ bcells <- CreateSeuratObject(counts = bcells,
                               min.cells = 3,
                               min.genes = 200, 
                               project = "Saba",
-                              names.field = c(1,2), 
+                              names.field = c(1), 
                               names.delim = "_")
 ```
 

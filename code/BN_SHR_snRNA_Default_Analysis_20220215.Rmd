@@ -80,7 +80,7 @@ bcells <- AddMetaData(bcells, ids)
 
 ## QC Metrics
   
-```{r examine_umi_and_ngenes, fig.width = 10, fig.height = 8, warning = F}
+```{r examine_umi_and_ngenes, fig.width = 10, fig.height = 8, warning = F, eval=FALSE}
 summary_dat <- data_frame(cell = colnames(bcells@assays$RNA@data), 
                           expt = bcells@meta.data$expt,
                           nUMIs = colSums(as.matrix(bcells@assays$RNA@data)),
@@ -148,27 +148,27 @@ mito_gene_list <- c("ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", "ND2"
 mito_gene_list <- paste0(mito_gene_list, collapse = "|")
 
 mito.genes <- grep(mito_gene_list, rownames(bcells@assays$RNA@data), value = T)
-proportion.mito <- Matrix::colSums(bcells@assays$RNA@data[mito.genes, ]) /
-  Matrix::colSums(bcells@assays$RNA@data)
-
-bcells <- AddMetaData(bcells, proportion.mito, "proportion.mito")
+# proportion.mito <- Matrix::colSums(bcells@assays$RNA@data[mito.genes, ]) /
+#   Matrix::colSums(bcells@assays$RNA@data)
+# 
+# bcells <- AddMetaData(bcells, proportion.mito, "proportion.mito")
 
 bcells[["percent.mt"]] <- PercentageFeatureSet(bcells, pattern = mito_gene_list)
 
-unfiltered <- bcells@meta.data %>% 
-  tibble::rownames_to_column("cell") %>% 
-  left_join(summary_dat, by = c("cell", "expt")) %>% 
-  as_data_frame()
-
-ggplot(unfiltered, aes(expt,
-                       proportion.mito)) +
-  geom_jitter(size = 0.25) +
-  geom_violin(aes(fill = expt), alpha = 0.66) +
-  scale_fill_brewer(palette = "Paired") +
-  theme(
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    axis.title.x = element_blank()
-  )
+# unfiltered <- bcells@meta.data %>% 
+#   tibble::rownames_to_column("cell") %>% 
+#   left_join(summary_dat, by = c("cell", "expt")) %>% 
+#   as_data_frame()
+# 
+# ggplot(unfiltered, aes(expt,
+#                        proportion.mito)) +
+#   geom_jitter(size = 0.25) +
+#   geom_violin(aes(fill = expt), alpha = 0.66) +
+#   scale_fill_brewer(palette = "Paired") +
+#   theme(
+#     axis.text.x = element_text(angle = 90, hjust = 1),
+#     axis.title.x = element_blank()
+#   )
 ```
 
 ### All Samples
@@ -183,29 +183,26 @@ ggplot(unfiltered, aes(expt,
 ```{r, results ='asis'}
 
 sample_names <- as.character(unique(bcells@meta.data$expt))
-per_sample <- map(sample_names, ~filter(unfiltered, 
-                                        expt == .x))
-
-# generate tab with individual plot programmatically 
-# see https://stackoverflow.com/questions/43752095/programmatically-insert-header-and-plot-in-same-code-chunk-with-r-markdown-using?noredirect=1&lq=1
-
-for(i in seq_along(per_sample)){
-  .col <- brewer.pal(10, "Paired")[i]
-  cat('\n### ', sample_names[i], '\n')
-  p <- ggplot(per_sample[[i]], aes(nUMIs, proportion.mito)) +
-        geom_point(aes(color = expt)) +
-        scale_color_manual(values = .col)
-  print(p)
-  cat('\n')
-}
+# per_sample <- map(sample_names, ~filter(unfiltered,
+                                        # expt == .x))
+# 
+# # generate tab with individual plot programmatically 
+# # see https://stackoverflow.com/questions/43752095/programmatically-insert-header-and-plot-in-same-code-chunk-with-r-markdown-using?noredirect=1&lq=1
+# 
+# for(i in seq_along(per_sample)){
+#   .col <- brewer.pal(10, "Paired")[i]
+#   cat('\n### ', sample_names[i], '\n')
+#   p <- ggplot(per_sample[[i]], aes(nUMIs, proportion.mito)) +
+#         geom_point(aes(color = expt)) +
+#         scale_color_manual(values = .col)
+#   print(p)
+#   cat('\n')
+# }
 
 # Visualize QC metrics as a violin plot
-for(i in seq_along(per_sample)){
-  .col <- brewer.pal(10, "Paired")[i]
-  cat('\n### ', sample_names[i], '\n')
-  print(VlnPlot(bcells, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3))
-  cat('\n')
-}
+
+VlnPlot(bcells, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, split.by = 'expt')
+
 ```
 
 Cells with low UMIs tend to have a higher percentage of mitochondrial reads, suggesting that these cells have lysed prematurely. However, overall a large proportion of cells are retained for further analysis after removing cells with > 20% UMIs derived from mitochondiral transcripts. 
@@ -215,7 +212,7 @@ Cells with low UMIs tend to have a higher percentage of mitochondrial reads, sug
 After filtering the distribution of UMIs, Genes, and Proportion of mitochondrial reads are shown as selectable tabs. 
 
 ```{r, apply_filters}
-bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 2500 & percent.mt < 20)
+bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 2500 & percent.mt < 5)
 ```
 
 ```{r ngenes_filter}
@@ -225,40 +222,10 @@ bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 2500 & per
 
 ### Post filtering violin plots
 ```{r ngenes_post_filter}
-for(i in seq_along(per_sample)){
-  .col <- brewer.pal(10, "Paired")[i]
-  cat('\n### ', sample_names[i], '\n')
-  print(VlnPlot(bcells, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, 
+
+VlnPlot(bcells, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, 
         cols = brewer.pal(10, "Paired"),
-        group.by = "expt"))
-  cat('\n')
-}
-```
-
-
-```{r}
-# VlnPlot(bcells, "nUMI", 
-#         cols.use = brewer.pal(10, "Paired"),
-#         group.by = "expt",
-#         x.lab.rot = T)
-```
-
-
-```{r}
-# VlnPlot(bcells, "proportion.mito", 
-#         cols.use = brewer.pal(10, "Paired"),
-#         group.by = "expt",
-#         x.lab.rot = T)
-
-```
-
-
-```{r GFP_counts}
-
-# VlnPlot(bcells, 
-#         c("egfp", "luc-firefly"),
-#         cols = brewer.pal(n = 10, "Paired"), 
-#         group.by = "expt")
+        split.by = "expt")
 
 ```
 
@@ -266,7 +233,7 @@ for(i in seq_along(per_sample)){
   The raw UMI count matrix will next be preprocessed for downstream clustering and visualization
   
 ### Normalize the data
-  First the UMI count data will be normlized. The normalization strategy implements a pooled normalization approach to improve standard normalization [Lun2016-fe]. Different cell populations can have large gene abundance and RNA content differences, which is problematic for simple library-size based normalization (i.e # of UMIs per gene / total UMIs per cell). This pooling approach find clusters cells to identify the cell popuations, then computes per cell normalization factors. The R package `scran`[http://bioconductor.org/packages/release/bioc/html/scran.html] implements this normalization method. 
+  First the UMI count data will be normalized. LogNormalize: Feature counts for each cell are divided by the total counts for that cell and multiplied by the scale.factor. This is then natural-log transformed using log1p.
 
 ```{r normalize, results = 'hide'}
 
@@ -328,10 +295,12 @@ plot2
 
 ### Control for noise
   Single-cell data is often noisy, and it is difficult to compare cells with very high UMIs to very low UMIs. For classification we do not want to bias our clusters based on nuisance variables such as UMI count or proportion of mitochondria. To help mitigate bias in our clustering a regression model is fit to predict gene expression based on nuisance variables. The residuals from this fit are then scaled and centered (i.e. turned into z-scores) for classification purposes. The scaled regressed data is not used for differential expression, but used only for classifcation, TSNE visualization, and pseudotime analysis. 
+  
+From function description: Scales and centers features in the dataset. If variables are provided in vars.to.regress, they are individually regressed against each feature, and the resulting residuals are then scaled and centered.
 
 ```{r scale_data, results='hide', message = F}
 all.genes <- rownames(bcells)
-bcells <- ScaleData(bcells, features = all.genes)
+bcells <- ScaleData(bcells, features = all.genes, split.by = 'expt')
 ```
 
 ### Calculate Principal Components
@@ -344,6 +313,7 @@ bcells <- RunPCA(bcells, features = VariableFeatures(object = bcells))
 VizDimLoadings(bcells, dims = 1:2, reduction = "pca")
 
 DimPlot(bcells, reduction = "pca")
+DimPlot(bcells, reduction = "pca", split.by = 'expt')
 
 # PCElbowPlot(bcells)
 ```
