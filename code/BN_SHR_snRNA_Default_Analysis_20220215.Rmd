@@ -1,6 +1,6 @@
 ---
-title: "Holger Russ scRNA-Seq analysis"
-author: "Kent Riemondy RBI"
+title: "snRNA-Seq Analysis Using BNLx/SHR - Default Analysis"
+author: "Harry A. Smith"
 date: "`R Sys.Date()`"
 output:
   html_document:
@@ -78,7 +78,6 @@ ids <- data.frame(row.names = colnames(bcells@assays$RNA@data),
 bcells <- AddMetaData(bcells, ids)
 ```
 
-## QC Metrics
   
 ```{r examine_umi_and_ngenes, fig.width = 10, fig.height = 8, warning = F, eval=FALSE}
 summary_dat <- data_frame(cell = colnames(bcells@assays$RNA@data), 
@@ -305,7 +304,7 @@ bcells <- ScaleData(bcells, features = all.genes, split.by = 'expt')
 
 ### Calculate Principal Components
 
-  PCA will now be performed on processed data using only the set of variable genes defined above. PCA will generate a set of new vectors that describe the variablity in the data. A subset of these principal components will be selected to be used as input data for TSNE visualization. Selecting the proper number of components is informed by examining the amount of variance captured in each PC. Shown below is a plot of variance captured in each PC. At a certain point, additional PCs capture little additional varaince, and therefore are uninformative for classification. For this dataset 17 PCs will be used for classification.
+  PCA will now be performed on processed data using only the set of variable genes defined above. PCA will generate a set of new vectors that describe the variablity in the data. A subset of these principal components will be selected to be used as input data for TSNE visualization. Selecting the proper number of components is informed by examining the amount of variance captured in each PC. Shown below is a plot of variance captured in each PC. At a certain point, additional PCs capture little additional varaince, and therefore are uninformative for classification. For this dataset 15 PCs will be used for classification.
   
 ```{r PCA_calc, results='hide'}
 bcells <- RunPCA(bcells, features = VariableFeatures(object = bcells))
@@ -357,7 +356,6 @@ ElbowPlot(bcells)
 ```
 
 ### Cluster cells {.tabset .tabsetfade}
-  [TSNE](https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding) is a non-linear method that is used to visualize the relationships between cells in two dimensions. TSNE will use the first 17 PCs calculated above to project cells into 2D space for visualization. The TSNE plot will be used for visualization purposes, but note that clustering will be performed using the 17 PCs rather than just the 2 dimensions of the TSNE. The perplexity setting of the TSNE analysis can impact the spacing of points and for this data a default setting of 30 (perplexity = 30) works well. Interpreting a tSNE plot can be somewhat challenging, a group from google produced a nice [report](https://distill.pub/2016/misread-tsne/) that discusses some of the potential issues with tSNE.
   
     
 ```{r select_dims}
@@ -369,61 +367,30 @@ bcells <- FindClusters(bcells, resolution = 0.5)
 
 bcells <- RunUMAP(bcells, dims = 1:15)
 
+DimPlot(bcells, reduction = "umap")
+
 DimPlot(bcells, reduction = "umap", split.by = 'expt')
 
 # save Seurat Object
-saveRDS(bcells, file = paste0(data_dir, "/", "bcells_default.rds"))
+# saveRDS(bcells, file = paste0(data_dir, "/", "bcells_default.rds"))
 ```
-  
-  Shown below is a TSNE projection of the single cell data, with each cell colored by the sample type. The TSNE project shows a very consistent pattern between the replicate experiments. The clusters all overlap very nicely, with a few exceptions. In the injured type II samples there are some distinct clusters. However overall the two experiments overlap very well. There is a normalization approach that I tested (using [this](http://www.biorxiv.org/content/early/2017/07/18/164889) method) to further align the data between the two experiments, however the overlap didn't improve (see .html [report]("../2018-01-18_aligning/2018-01-18_aligning.html")), and therefore I don't think additional alignment efforts are necessary. 
+
 
 
 ## Differential Expression and Marker Gene Identification
 
+```{r find_markers, eval=FALSE}
+# find markers for every cluster compared to all remaining cells, report only the positive
+# ones
+bcells.markers <- FindAllMarkers(bcells, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+bcells.markers %>%
+    group_by(cluster) %>%
+    slice_max(n = 2, order_by = avg_log2FC)
 
-
-### xcel spreadsheet
-
-```{r}
-markers <- read_tsv("res0.3_markers.txt")
-
-list_of_markers <- split(markers, markers$cluster)
-names(list_of_markers) <- str_c("cluster_", names(list_of_markers))
-list_of_markers <- map(list_of_markers,
-                       ~set_xlsx_class(.x, "gene", "Text"))
-
-readme_sheet <- data_frame(
-  Columns = c(
-  "Genes differentially expressed between each cluster and all other cells",
-  "",
-  "Columns",
-  "pval",
-  "avg_logFC",
-  "pct.1",
-  "pct.2",
-  "p_val_adj",
-  "cluster",
-  "gene"
-), Description = c(
-  "",
-  "",
-  "",
-  "p-value from wilcox test of indicated cluster compared to other clusters",
-  "average fold change expressed in natural log",
-  "percent of cells expressing gene (UMI > 0) in cluster",
-  "percent of cell expressing gene (UMI > 0) in all other clusters",
-  "Bonferroni corrected p-value",
-  "cluster name",
-  "gene name"
-))
-
-readme_sheet <- list(README = readme_sheet)
-names(readme_sheet) <- "README"
-
-openxlsx::write.xlsx(c(readme_sheet,
-                       list_of_markers),
-                     "markers_per_cluster.xlsx")
+write_csv(bcells.markers, file = paste0(data_dir, "/", "all_markers_all_clusters.csv"))
 ```
+
+
 ## Session Info
 ```{r ses}
 sessionInfo()
