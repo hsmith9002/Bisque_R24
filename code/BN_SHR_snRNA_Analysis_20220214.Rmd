@@ -211,7 +211,7 @@ Cells with low UMIs tend to have a higher percentage of mitochondrial reads, sug
 After filtering the distribution of UMIs, Genes, and Proportion of mitochondrial reads are shown as selectable tabs. 
 
 ```{r, apply_filters}
-bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 10000 & percent.mt < 20)
+bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 2500 & percent.mt < 20)
 ```
 
 ```{r ngenes_filter}
@@ -231,7 +231,7 @@ for(i in seq_along(per_sample)){
 }
 ```
 
-### Number of UMIs
+
 ```{r}
 # VlnPlot(bcells, "nUMI", 
 #         cols.use = brewer.pal(10, "Paired"),
@@ -239,7 +239,7 @@ for(i in seq_along(per_sample)){
 #         x.lab.rot = T)
 ```
 
-### Proportion of Mitochondria
+
 ```{r}
 # VlnPlot(bcells, "proportion.mito", 
 #         cols.use = brewer.pal(10, "Paired"),
@@ -248,7 +248,7 @@ for(i in seq_along(per_sample)){
 
 ```
 
-### GFP/LUC counts
+
 ```{r GFP_counts}
 
 # VlnPlot(bcells, 
@@ -296,7 +296,7 @@ bcells <- NormalizeData(bcells, normalization.method = "LogNormalize", scale.fac
 
 ### Identify variable genes
 
-  The normalized UMI count matrix contains `r  length(rownames(bcells@assays$RNA@data))` genes and `r length(colnamesbcells@assays$RNA@data)` cells. Most of these genes have very low expression or very low variance across all of the cells in the dataset. These genes are therefore very uninformative for classifying different cell types. In this next step the set of variable genes useful for classification will be identified, and used for downstream PCA, TSNE, and classification purposes. 
+  The normalized UMI count matrix contains `r  length(rownames(bcells@assays$RNA@data))` genes and `r length(colnames(bcells@assays$RNA@data))` cells. Most of these genes have very low expression or very low variance across all of the cells in the dataset. These genes are therefore very uninformative for classifying different cell types. In this next step the set of variable genes useful for classification will be identified, and used for downstream PCA, TSNE, and classification purposes. 
   
   Variable genes will be selected by examining a plot of the average expression across all cells on the x axis to the dispersion across all genes. Highly variable genes will have non-zero dispersion. The dispersion is defined by the variance / mean. 
   
@@ -363,13 +363,22 @@ DimHeatmap(bcells, dims = 1:15, cells = 500, balanced = TRUE)
 # }
 ```
 
-### Determining dimensionality of the data
+### Determining dimensionality of the data {.tabset .tabset-fade}
 
 ```{r, dim_determine, results ='asis'}
 bcells <- JackStraw(bcells, num.replicate = 100)
 bcells <- ScoreJackStraw(bcells, dims = 1:20)
+```
 
+#### JackStraw Plot
+
+```{r js_plot, results ='asis'}
 JackStrawPlot(bcells, dims = 1:15)
+```
+
+#### Elbow Plot
+
+```{r elbow_plot, results ='asis'}
 ElbowPlot(bcells)
 ```
 
@@ -391,326 +400,326 @@ DimPlot(bcells, reduction = "umap", split.by = 'expt')
   
   Shown below is a TSNE projection of the single cell data, with each cell colored by the sample type. The TSNE project shows a very consistent pattern between the replicate experiments. The clusters all overlap very nicely, with a few exceptions. In the injured type II samples there are some distinct clusters. However overall the two experiments overlap very well. There is a normalization approach that I tested (using [this](http://www.biorxiv.org/content/early/2017/07/18/164889) method) to further align the data between the two experiments, however the overlap didn't improve (see .html [report]("../2018-01-18_aligning/2018-01-18_aligning.html")), and therefore I don't think additional alignment efforts are necessary. 
   
-#### Sample Names
+<!-- #### Sample Names -->
 
-```{r plot_TSNE, fig.width = 10, fig.height = 10}
-TSNEPlot(bcells, 
-         colors.use = brewer.pal(n = 10, "Paired"), 
-         group.by = "expt")
-```
-
-
-#### Genes Detected
-```{r, fig.width = 10, fig.height = 10 }
-FeaturePlot(bcells, "nGene", no.legend = F)
-```
-
-#### UMIs Detected
-```{r, fig.width = 10, fig.height = 10 }
-FeaturePlot(bcells, "nUMI", no.legend = F)
-```
-
-#### Proportion Mito
-```{r, fig.width = 10, fig.height = 10 }
-FeaturePlot(bcells, "proportion.mito", no.legend = F)
-
-```
-
-#### eGFP
-```{r, fig.width = 10, fig.height = 10 }
-FeaturePlot(bcells, "egfp", no.legend = F)
-```
+<!-- ```{r plot_TSNE, fig.width = 10, fig.height = 10} -->
+<!-- TSNEPlot(bcells,  -->
+<!--          colors.use = brewer.pal(n = 10, "Paired"),  -->
+<!--          group.by = "expt") -->
+<!-- ``` -->
 
 
-#### firefly-luc
-```{r, fig.width = 10, fig.height = 10 }
-FeaturePlot(bcells, "luc-firefly", no.legend = F)
-```
+<!-- #### Genes Detected -->
+<!-- ```{r, fig.width = 10, fig.height = 10 } -->
+<!-- FeaturePlot(bcells, "nGene", no.legend = F) -->
+<!-- ``` -->
 
-#### Per expt
-```{r, fig.width = 16, fig.height= 4}
-bcells <- SetAllIdent(bcells, "expt")
-sample_names <- unique(bcells@meta.data$expt)
-ord <- levels(bcells@meta.data$expt)
+<!-- #### UMIs Detected -->
+<!-- ```{r, fig.width = 10, fig.height = 10 } -->
+<!-- FeaturePlot(bcells, "nUMI", no.legend = F) -->
+<!-- ``` -->
 
-cell_ids <- map(ord, ~bcells@cell.names[bcells@meta.data$expt == .x])
-names(cell_ids) <- ord
-.cols <- brewer.pal(n = 10, "Paired")[1:length(sample_names)]
+<!-- #### Proportion Mito -->
+<!-- ```{r, fig.width = 10, fig.height = 10 } -->
+<!-- FeaturePlot(bcells, "proportion.mito", no.legend = F) -->
 
-p <- map2(cell_ids,
-         .cols,
-         ~TSNEPlot(bcells, 
-                   do.label = F, 
-                   pt.size = 0.5, 
-                   cells.use = .x, 
-                   do.return = T, 
-                   colors.use = .y,
-                   label.size = 5))
+<!-- ``` -->
 
-p[[3]] <- TSNEPlot(bcells, 
-                   do.label = F, 
-                   pt.size = 0.5, 
-                   do.return = T, 
-                   colors.use  = .cols,
-                   label.size = 5)
+<!-- #### eGFP -->
+<!-- ```{r, fig.width = 10, fig.height = 10 } -->
+<!-- FeaturePlot(bcells, "egfp", no.legend = F) -->
+<!-- ``` -->
 
 
-plt <- plot_grid(plotlist = p, nrow = 1, 
-                 align = "hv")
+<!-- #### firefly-luc -->
+<!-- ```{r, fig.width = 10, fig.height = 10 } -->
+<!-- FeaturePlot(bcells, "luc-firefly", no.legend = F) -->
+<!-- ``` -->
 
-plt
-```
+<!-- #### Per expt -->
+<!-- ```{r, fig.width = 16, fig.height= 4} -->
+<!-- bcells <- SetAllIdent(bcells, "expt") -->
+<!-- sample_names <- unique(bcells@meta.data$expt) -->
+<!-- ord <- levels(bcells@meta.data$expt) -->
 
-## Cluster identification {.tabset}
+<!-- cell_ids <- map(ord, ~bcells@cell.names[bcells@meta.data$expt == .x]) -->
+<!-- names(cell_ids) <- ord -->
+<!-- .cols <- brewer.pal(n = 10, "Paired")[1:length(sample_names)] -->
 
-  Unsupervised clustering was next performed to identify transcriptionally distinct cell populations. A graph-based algorithm was used that builds a k-nearest neighbor (KNN) graph on the euclidean distances calculated from principal components, weights each edge based on the local neighborhood using jaccard statistics, then prunes the graph to select clusters using an optimization function. The graph based algorithm is implemented in the Seurat R package.  Clusters are visualized using TSNE, but the cluster assignments are based on the first 15 principal components.
+<!-- p <- map2(cell_ids, -->
+<!--          .cols, -->
+<!--          ~TSNEPlot(bcells,  -->
+<!--                    do.label = F,  -->
+<!--                    pt.size = 0.5,  -->
+<!--                    cells.use = .x,  -->
+<!--                    do.return = T,  -->
+<!--                    colors.use = .y, -->
+<!--                    label.size = 5)) -->
 
-
-```{r find_clusters, fig.width = 14, fig.height = 10, warning=FALSE}
-bcells <- FindClusters(bcells, 
-                     reduction.type = "pca", 
-                     dims.use = 1:17,
-                     k.param = 40, 
-                     resolution = 0.3, 
-                     print.output = 0, 
-                     plot.SNN = F,
-                     save.SNN = T, 
-                     random.seed = 0)
-
-bcells <- FindClusters(bcells, 
-                     reduction.type = "pca", 
-                     dims.use =1:17,
-                     k.param = 40, 
-                     resolution = 0.5, 
-                     print.output = 0, 
-                     plot.SNN = F,
-                     save.SNN = T, 
-                     random.seed = 0)
-
-bcells <- FindClusters(bcells, 
-                     reduction.type = "pca", 
-                     dims.use = 1:17, 
-                     k.param  = 30, 
-                     resolution = 0.8, 
-                     print.output = 0, 
-                     plot.SNN = F,
-                     save.SNN = T, 
-                     random.seed = 0)
-
-bcells <- FindClusters(bcells, 
-                     reduction.type = "pca", 
-                     dims.use =1:17, 
-                     k.param  = 30, 
-                     resolution = 1.0, 
-                     print.output = 0, 
-                     plot.SNN = F,
-                     save.SNN = T, 
-                     random.seed = 0)
-
-bcells <- FindClusters(bcells, 
-                     reduction.type = "pca", 
-                     dims.use = 1:17, 
-                     k.param = 30, 
-                     resolution = 1.1, 
-                     print.output = 0, 
-                     plot.SNN = F,
-                     save.SNN = T, 
-                     random.seed = 0)
-
-bcells <- FindClusters(bcells, 
-                     reduction.type = "pca", 
-                     dims.use = 1:17, 
-                     k.param = 30, 
-                     resolution = 1.2, 
-                     print.output = 0, 
-                     plot.SNN = F,
-                     save.SNN = T, 
-                     random.seed = 0)
-
-bcells <- FindClusters(bcells, 
-                     reduction.type = "pca", 
-                     dims.use = 1:17, 
-                     k.param = 30, 
-                     resolution = 1.5, 
-                     print.output = 0, 
-                     plot.SNN = F,
-                     save.SNN = T, 
-                     random.seed = 0)
-
-clustering_params <- colnames(bcells@meta.data) %>% 
-  str_subset("res")
-
-# generate tsnes for each clustering setting
-clust_tsnes <- map(clustering_params,
-     function(x){
-       bcells <- SetAllIdent(bcells, x); 
-       TSNEPlot(bcells, 
-                pt.size = 0.5,
-                do.label = T,
-                label.size = 10,
-                do.return = T,
-                no.legend = T, 
-                plot.title = x)
-     })
+<!-- p[[3]] <- TSNEPlot(bcells,  -->
+<!--                    do.label = F,  -->
+<!--                    pt.size = 0.5,  -->
+<!--                    do.return = T,  -->
+<!--                    colors.use  = .cols, -->
+<!--                    label.size = 5) -->
 
 
-plot_grid(plotlist = clust_tsnes)
-```
+<!-- plt <- plot_grid(plotlist = p, nrow = 1,  -->
+<!--                  align = "hv") -->
+
+<!-- plt -->
+<!-- ``` -->
+
+<!-- ## Cluster identification {.tabset} -->
+
+<!--   Unsupervised clustering was next performed to identify transcriptionally distinct cell populations. A graph-based algorithm was used that builds a k-nearest neighbor (KNN) graph on the euclidean distances calculated from principal components, weights each edge based on the local neighborhood using jaccard statistics, then prunes the graph to select clusters using an optimization function. The graph based algorithm is implemented in the Seurat R package.  Clusters are visualized using TSNE, but the cluster assignments are based on the first 15 principal components. -->
 
 
-## Marker gene expression for each cluster {.tabset .tabset-fade}
+<!-- ```{r find_clusters, fig.width = 14, fig.height = 10, warning=FALSE} -->
+<!-- bcells <- FindClusters(bcells,  -->
+<!--                      reduction.type = "pca",  -->
+<!--                      dims.use = 1:17, -->
+<!--                      k.param = 40,  -->
+<!--                      resolution = 0.3,  -->
+<!--                      print.output = 0,  -->
+<!--                      plot.SNN = F, -->
+<!--                      save.SNN = T,  -->
+<!--                      random.seed = 0) -->
 
-  Plotted below are a set of known marker genes that help to identify each cell population. 
+<!-- bcells <- FindClusters(bcells,  -->
+<!--                      reduction.type = "pca",  -->
+<!--                      dims.use =1:17, -->
+<!--                      k.param = 40,  -->
+<!--                      resolution = 0.5,  -->
+<!--                      print.output = 0,  -->
+<!--                      plot.SNN = F, -->
+<!--                      save.SNN = T,  -->
+<!--                      random.seed = 0) -->
 
-Click on the tabs to view other markers
+<!-- bcells <- FindClusters(bcells,  -->
+<!--                      reduction.type = "pca",  -->
+<!--                      dims.use = 1:17,  -->
+<!--                      k.param  = 30,  -->
+<!--                      resolution = 0.8,  -->
+<!--                      print.output = 0,  -->
+<!--                      plot.SNN = F, -->
+<!--                      save.SNN = T,  -->
+<!--                      random.seed = 0) -->
 
-```{r marker genes, fig.width = 10, fig.height= 10}
+<!-- bcells <- FindClusters(bcells,  -->
+<!--                      reduction.type = "pca",  -->
+<!--                      dims.use =1:17,  -->
+<!--                      k.param  = 30,  -->
+<!--                      resolution = 1.0,  -->
+<!--                      print.output = 0,  -->
+<!--                      plot.SNN = F, -->
+<!--                      save.SNN = T,  -->
+<!--                      random.seed = 0) -->
 
-control_markers <- c(
-  "CD9",
-  "ST8SIA1",
-  "INS",
-  "NPY",
-  "KCNE4",
-  "HCN1",
-  "DAB1",
-  "ST8SIA1",
-  "HCN4",
-  "NEUROD1",
-  "SCGB2A1",
-  "KLHL1",
-  "SLC44A4"
-)
-```
+<!-- bcells <- FindClusters(bcells,  -->
+<!--                      reduction.type = "pca",  -->
+<!--                      dims.use = 1:17,  -->
+<!--                      k.param = 30,  -->
+<!--                      resolution = 1.1,  -->
+<!--                      print.output = 0,  -->
+<!--                      plot.SNN = F, -->
+<!--                      save.SNN = T,  -->
+<!--                      random.seed = 0) -->
 
-### Various
-```{r, fig.width=10, fig.height=20}
-FeaturePlot(bcells, control_markers, 
-            pt.size = 0.50, cols.use = tcols)
+<!-- bcells <- FindClusters(bcells,  -->
+<!--                      reduction.type = "pca",  -->
+<!--                      dims.use = 1:17,  -->
+<!--                      k.param = 30,  -->
+<!--                      resolution = 1.2,  -->
+<!--                      print.output = 0,  -->
+<!--                      plot.SNN = F, -->
+<!--                      save.SNN = T,  -->
+<!--                      random.seed = 0) -->
 
-```
+<!-- bcells <- FindClusters(bcells,  -->
+<!--                      reduction.type = "pca",  -->
+<!--                      dims.use = 1:17,  -->
+<!--                      k.param = 30,  -->
+<!--                      resolution = 1.5,  -->
+<!--                      print.output = 0,  -->
+<!--                      plot.SNN = F, -->
+<!--                      save.SNN = T,  -->
+<!--                      random.seed = 0) -->
 
+<!-- clustering_params <- colnames(bcells@meta.data) %>%  -->
+<!--   str_subset("res") -->
 
-## Gene expression per cluster
-
-Next we will determine genes enriched in each sample by comparing gene expression in each sample to all other samples. Plotted below are the top 10 enriched genes detected in each sample for all cell transcriptomes (Yellow is high, purple is low).
-
-```{r find_markers}
-bcells <- SetAllIdent(bcells, "res.0.3")
-if (!file.exists("res0.3_markers.txt")){
-  bcells_markers <- FindAllMarkers(bcells, 
-                                  only.pos = TRUE,  
-                                  min.pct = 0.25, 
-                                  thresh.use = 0.25)
-  
-  write_tsv(bcells_markers, "res0.3_markers.txt")
-} else {
-  bcells_markers <- read_tsv("res0.3_markers.txt")
-}
-
-bcells_markers %>% 
-  group_by(cluster) %>% 
-  top_n(25, avg_logFC) -> top25
-
-```
-
-```{r, fig.width = 20, fig.height= 20}
-pdf("marker_heatmap.pdf", width = 12, height = 8)
-DoHeatmap(bcells, 
-          genes.use = top25$gene, 
-          slim.col.label = TRUE, 
-          cex.row = 1, 
-          remove.key = TRUE)
-dev.off()
-```
-
-
-## Top genes per cell type {.tabset .tabset-fade}
-  Plotted are the abundances of the top marker genes detected per identified cell type (red is high, yellow is low) projected onto the TSNE map. 
-  
-```{r genes_enriched_per_cluster}
-top_genenames <- split(top25, 
-                        top25$cluster) %>% 
-  map(., ~.x[1:4, ]$gene)
-
-```
-
-```{r tsnes_per_cluster, fig.width = 10, fig.height= 10, results = "asis"}
-
-for(i in seq_along(top_genenames)){
-  cat('\n### ', names(top_genenames)[i], '\n', sep = "")
-  FeaturePlot(bcells, top_genenames[[i]], pt.size = 0.5, cols.use = tcols)
-  cat('\n')
-}
-```
+<!-- # generate tsnes for each clustering setting -->
+<!-- clust_tsnes <- map(clustering_params, -->
+<!--      function(x){ -->
+<!--        bcells <- SetAllIdent(bcells, x);  -->
+<!--        TSNEPlot(bcells,  -->
+<!--                 pt.size = 0.5, -->
+<!--                 do.label = T, -->
+<!--                 label.size = 10, -->
+<!--                 do.return = T, -->
+<!--                 no.legend = T,  -->
+<!--                 plot.title = x) -->
+<!--      }) -->
 
 
-## Distribution of cells per cell type
+<!-- plot_grid(plotlist = clust_tsnes) -->
+<!-- ``` -->
 
-. 
-```{r cluster_distribution}
-cluster_ids <- bcells@meta.data$res.0.3
-cell_ids <- bcells@cell.names
-expt <- bcells@meta.data$expt
 
-cluster_summary <- data_frame(id = cell_ids, expt = expt, cluster = cluster_ids)
-cluster_summary <- group_by(cluster_summary, expt, cluster) %>% summarize(cells = n())
+<!-- ## Marker gene expression for each cluster {.tabset .tabset-fade} -->
 
-ggplot(cluster_summary, aes(cluster, cells)) +
-  ylab("Number of Cells") +
-  scale_fill_brewer(palette = "Paired") +
-  geom_bar(stat = "identity", 
-           aes(fill = expt), position = "dodge") 
-  
-```
+<!--   Plotted below are a set of known marker genes that help to identify each cell population.  -->
 
-```{r save}
-saveRDS(bcells, file = "sobj.rds")
-```
+<!-- Click on the tabs to view other markers -->
 
-### xcel spreadsheet
+<!-- ```{r marker genes, fig.width = 10, fig.height= 10} -->
 
-```{r}
-markers <- read_tsv("res0.3_markers.txt")
+<!-- control_markers <- c( -->
+<!--   "CD9", -->
+<!--   "ST8SIA1", -->
+<!--   "INS", -->
+<!--   "NPY", -->
+<!--   "KCNE4", -->
+<!--   "HCN1", -->
+<!--   "DAB1", -->
+<!--   "ST8SIA1", -->
+<!--   "HCN4", -->
+<!--   "NEUROD1", -->
+<!--   "SCGB2A1", -->
+<!--   "KLHL1", -->
+<!--   "SLC44A4" -->
+<!-- ) -->
+<!-- ``` -->
 
-list_of_markers <- split(markers, markers$cluster)
-names(list_of_markers) <- str_c("cluster_", names(list_of_markers))
-list_of_markers <- map(list_of_markers, 
-                       ~set_xlsx_class(.x, "gene", "Text"))
+<!-- ### Various -->
+<!-- ```{r, fig.width=10, fig.height=20} -->
+<!-- FeaturePlot(bcells, control_markers,  -->
+<!--             pt.size = 0.50, cols.use = tcols) -->
 
-readme_sheet <- data_frame(
-  Columns = c(
-  "Genes differentially expressed between each cluster and all other cells",
-  "",
-  "Columns",
-  "pval",
-  "avg_logFC",
-  "pct.1",
-  "pct.2",
-  "p_val_adj",
-  "cluster",
-  "gene"
-), Description = c(
-  "",
-  "",
-  "",
-  "p-value from wilcox test of indicated cluster compared to other clusters",
-  "average fold change expressed in natural log",
-  "percent of cells expressing gene (UMI > 0) in cluster",
-  "percent of cell expressing gene (UMI > 0) in all other clusters",
-  "Bonferroni corrected p-value",
-  "cluster name",
-  "gene name"
-))
+<!-- ``` -->
 
-readme_sheet <- list(README = readme_sheet)
-names(readme_sheet) <- "README"
 
-openxlsx::write.xlsx(c(readme_sheet, 
-                       list_of_markers),
-                     "markers_per_cluster.xlsx")
-```
-## Session Info
-```{r ses}
-sessionInfo()
-```
+<!-- ## Gene expression per cluster -->
+
+<!-- Next we will determine genes enriched in each sample by comparing gene expression in each sample to all other samples. Plotted below are the top 10 enriched genes detected in each sample for all cell transcriptomes (Yellow is high, purple is low). -->
+
+<!-- ```{r find_markers} -->
+<!-- bcells <- SetAllIdent(bcells, "res.0.3") -->
+<!-- if (!file.exists("res0.3_markers.txt")){ -->
+<!--   bcells_markers <- FindAllMarkers(bcells,  -->
+<!--                                   only.pos = TRUE,   -->
+<!--                                   min.pct = 0.25,  -->
+<!--                                   thresh.use = 0.25) -->
+
+<!--   write_tsv(bcells_markers, "res0.3_markers.txt") -->
+<!-- } else { -->
+<!--   bcells_markers <- read_tsv("res0.3_markers.txt") -->
+<!-- } -->
+
+<!-- bcells_markers %>%  -->
+<!--   group_by(cluster) %>%  -->
+<!--   top_n(25, avg_logFC) -> top25 -->
+
+<!-- ``` -->
+
+<!-- ```{r, fig.width = 20, fig.height= 20} -->
+<!-- pdf("marker_heatmap.pdf", width = 12, height = 8) -->
+<!-- DoHeatmap(bcells,  -->
+<!--           genes.use = top25$gene,  -->
+<!--           slim.col.label = TRUE,  -->
+<!--           cex.row = 1,  -->
+<!--           remove.key = TRUE) -->
+<!-- dev.off() -->
+<!-- ``` -->
+
+
+<!-- ## Top genes per cell type {.tabset .tabset-fade} -->
+<!--   Plotted are the abundances of the top marker genes detected per identified cell type (red is high, yellow is low) projected onto the TSNE map.  -->
+
+<!-- ```{r genes_enriched_per_cluster} -->
+<!-- top_genenames <- split(top25,  -->
+<!--                         top25$cluster) %>%  -->
+<!--   map(., ~.x[1:4, ]$gene) -->
+
+<!-- ``` -->
+
+<!-- ```{r tsnes_per_cluster, fig.width = 10, fig.height= 10, results = "asis"} -->
+
+<!-- for(i in seq_along(top_genenames)){ -->
+<!--   cat('\n### ', names(top_genenames)[i], '\n', sep = "") -->
+<!--   FeaturePlot(bcells, top_genenames[[i]], pt.size = 0.5, cols.use = tcols) -->
+<!--   cat('\n') -->
+<!-- } -->
+<!-- ``` -->
+
+
+<!-- ## Distribution of cells per cell type -->
+
+<!-- .  -->
+<!-- ```{r cluster_distribution} -->
+<!-- cluster_ids <- bcells@meta.data$res.0.3 -->
+<!-- cell_ids <- bcells@cell.names -->
+<!-- expt <- bcells@meta.data$expt -->
+
+<!-- cluster_summary <- data_frame(id = cell_ids, expt = expt, cluster = cluster_ids) -->
+<!-- cluster_summary <- group_by(cluster_summary, expt, cluster) %>% summarize(cells = n()) -->
+
+<!-- ggplot(cluster_summary, aes(cluster, cells)) + -->
+<!--   ylab("Number of Cells") + -->
+<!--   scale_fill_brewer(palette = "Paired") + -->
+<!--   geom_bar(stat = "identity",  -->
+<!--            aes(fill = expt), position = "dodge")  -->
+
+<!-- ``` -->
+
+<!-- ```{r save} -->
+<!-- saveRDS(bcells, file = "sobj.rds") -->
+<!-- ``` -->
+
+<!-- ### xcel spreadsheet -->
+
+<!-- ```{r} -->
+<!-- markers <- read_tsv("res0.3_markers.txt") -->
+
+<!-- list_of_markers <- split(markers, markers$cluster) -->
+<!-- names(list_of_markers) <- str_c("cluster_", names(list_of_markers)) -->
+<!-- list_of_markers <- map(list_of_markers,  -->
+<!--                        ~set_xlsx_class(.x, "gene", "Text")) -->
+
+<!-- readme_sheet <- data_frame( -->
+<!--   Columns = c( -->
+<!--   "Genes differentially expressed between each cluster and all other cells", -->
+<!--   "", -->
+<!--   "Columns", -->
+<!--   "pval", -->
+<!--   "avg_logFC", -->
+<!--   "pct.1", -->
+<!--   "pct.2", -->
+<!--   "p_val_adj", -->
+<!--   "cluster", -->
+<!--   "gene" -->
+<!-- ), Description = c( -->
+<!--   "", -->
+<!--   "", -->
+<!--   "", -->
+<!--   "p-value from wilcox test of indicated cluster compared to other clusters", -->
+<!--   "average fold change expressed in natural log", -->
+<!--   "percent of cells expressing gene (UMI > 0) in cluster", -->
+<!--   "percent of cell expressing gene (UMI > 0) in all other clusters", -->
+<!--   "Bonferroni corrected p-value", -->
+<!--   "cluster name", -->
+<!--   "gene name" -->
+<!-- )) -->
+
+<!-- readme_sheet <- list(README = readme_sheet) -->
+<!-- names(readme_sheet) <- "README" -->
+
+<!-- openxlsx::write.xlsx(c(readme_sheet,  -->
+<!--                        list_of_markers), -->
+<!--                      "markers_per_cluster.xlsx") -->
+<!-- ``` -->
+<!-- ## Session Info -->
+<!-- ```{r ses} -->
+<!-- sessionInfo() -->
+<!-- ``` -->
