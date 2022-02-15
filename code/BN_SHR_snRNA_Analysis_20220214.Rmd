@@ -315,13 +315,19 @@ bcells <- FindVariableFeatures(
 
 # Identify the 10 most highly variable genes
 top10 <- head(VariableFeatures(bcells), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(bcells)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE, xnudge = 0, ynudge = 0)
+plot2
 ```
 
 ### Control for noise
   Single-cell data is often noisy, and it is difficult to compare cells with very high UMIs to very low UMIs. For classification we do not want to bias our clusters based on nuisance variables such as UMI count or proportion of mitochondria. To help mitigate bias in our clustering a regression model is fit to predict gene expression based on nuisance variables. The residuals from this fit are then scaled and centered (i.e. turned into z-scores) for classification purposes. The scaled regressed data is not used for differential expression, but used only for classifcation, TSNE visualization, and pseudotime analysis. 
 
 ```{r scale_data, results='hide', message = F}
-bcells <- ScaleData(bcells)
+all.genes <- rownames(bcells)
+bcells <- ScaleData(bcells, features = all.genes)
 ```
 
 ### Calculate Principal Components
@@ -329,52 +335,58 @@ bcells <- ScaleData(bcells)
   PCA will now be performed on processed data using only the set of variable genes defined above. PCA will generate a set of new vectors that describe the variablity in the data. A subset of these principal components will be selected to be used as input data for TSNE visualization. Selecting the proper number of components is informed by examining the amount of variance captured in each PC. Shown below is a plot of variance captured in each PC. At a certain point, additional PCs capture little additional varaince, and therefore are uninformative for classification. For this dataset 17 PCs will be used for classification.
   
 ```{r PCA_calc, results='hide'}
-bcells <- RunPCA(bcells, 
-               pc.genes = bcells@var.genes, 
-               do.print = FALSE, 
-               pcs.print = 1:5, 
-               genes.print = 5,
-               seed.use = 20180530)
+bcells <- RunPCA(bcells, features = VariableFeatures(object = bcells))
 
-PCElbowPlot(bcells)
+VizDimLoadings(bcells, dims = 1:2, reduction = "pca")
+
+DimPlot(bcells, reduction = "pca")
+
+# PCElbowPlot(bcells)
 ```
 
-### PCA Plots {.tabset .tabsetfade}
-  Shown in the tabs are 2 dimensional plots showing different principal components. Overall the data looks good as there is quite alot of structure to the data and many consisent populations that match the sample types are observed.
+### PCA Heatmaps {.tabset .tabsetfade}
+  
   
 ```{r pc_plots, results ='asis'}
-pcs <- list(
-  c(1, 2),
-  c(1, 3),
-  c(1, 4),
-  c(2, 3),
-  c(2, 4),
-  c(3, 4)
-)
+DimHeatmap(bcells, dims = 1:15, cells = 500, balanced = TRUE)
 
 
-for(i in seq_along(pcs)){
-  cat('\n#### ', 'PC', pcs[[i]][1], ' vs PC', pcs[[i]][2], '\n', sep = "")
-  PCAPlot(bcells, 
-               pcs[[i]][1], 
-               pcs[[i]][2], 
-               cols.use = brewer.pal(10, "Paired"), 
-        group.by = "expt")
-  #print(p)
-  cat('\n')
-}
+# for(i in seq_along(pcs)){
+#   cat('\n#### ', 'PC', pcs[[i]][1], ' vs PC', pcs[[i]][2], '\n', sep = "")
+#   DimPlot(bcells, 
+#               dims =  c(pcs[[i]][1], 
+#                pcs[[i]][2]),
+#                col = brewer.pal(10, "Paired"), 
+#         group.by = "expt")
+#   #print(p)
+#   cat('\n')
+# }
 ```
 
-### Run TSNE {.tabset .tabsetfade}
+### Determining dimensionality of the data
+
+```{r, dim_determine, results ='asis'}
+bcells <- JackStraw(bcells, num.replicate = 100)
+bcells <- ScoreJackStraw(bcells, dims = 1:20)
+
+JackStrawPlot(bcells, dims = 1:15)
+ElbowPlot(bcells)
+```
+
+### Cluster cells {.tabset .tabsetfade}
   [TSNE](https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding) is a non-linear method that is used to visualize the relationships between cells in two dimensions. TSNE will use the first 17 PCs calculated above to project cells into 2D space for visualization. The TSNE plot will be used for visualization purposes, but note that clustering will be performed using the 17 PCs rather than just the 2 dimensions of the TSNE. The perplexity setting of the TSNE analysis can impact the spacing of points and for this data a default setting of 30 (perplexity = 30) works well. Interpreting a tSNE plot can be somewhat challenging, a group from google produced a nice [report](https://distill.pub/2016/misread-tsne/) that discusses some of the potential issues with tSNE.
   
     
 ```{r select_dims}
-bcells <- RunTSNE(bcells, 
-                   dims.use = 1:17, 
-                   do.fast = T, 
-                   k.seed = 20180530,
-                   perplexity = 30)
+bcells <- FindNeighbors(bcells, dims = 1:10)
+bcells <- FindClusters(bcells, resolution = 0.5)
+
+# reticulate::py_install(packages =
+#  'umap-learn')
+
+bcells <- RunUMAP(bcells, dims = 1:10)
+
+DimPlot(bcells, reduction = "umap", split.by = 'expt')
 ```
   
   Shown below is a TSNE projection of the single cell data, with each cell colored by the sample type. The TSNE project shows a very consistent pattern between the replicate experiments. The clusters all overlap very nicely, with a few exceptions. In the injured type II samples there are some distinct clusters. However overall the two experiments overlap very well. There is a normalization approach that I tested (using [this](http://www.biorxiv.org/content/early/2017/07/18/164889) method) to further align the data between the two experiments, however the overlap didn't improve (see .html [report]("../2018-01-18_aligning/2018-01-18_aligning.html")), and therefore I don't think additional alignment efforts are necessary. 
