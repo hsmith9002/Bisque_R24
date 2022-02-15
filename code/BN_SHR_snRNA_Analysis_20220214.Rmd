@@ -296,19 +296,25 @@ bcells <- NormalizeData(bcells, normalization.method = "LogNormalize", scale.fac
 
 ### Identify variable genes
 
-  The normalized UMI count matrix contains `r  length(rownames(bcells@data))` genes and `r length(colnames(bcells@data))` cells. Most of these genes have very low expression or very low variance across all of the cells in the dataset. These genes are therefore very uninformative for classifying different cell types. In this next step the set of variable genes useful for classification will be identified, and used for downstream PCA, TSNE, and classification purposes. 
+  The normalized UMI count matrix contains `r  length(rownames(bcells@assays$RNA@data))` genes and `r length(colnamesbcells@assays$RNA@data)` cells. Most of these genes have very low expression or very low variance across all of the cells in the dataset. These genes are therefore very uninformative for classifying different cell types. In this next step the set of variable genes useful for classification will be identified, and used for downstream PCA, TSNE, and classification purposes. 
   
   Variable genes will be selected by examining a plot of the average expression across all cells on the x axis to the dispersion across all genes. Highly variable genes will have non-zero dispersion. The dispersion is defined by the variance / mean. 
   
 ```{r get_variable_genes, results = 'hide'}
-bcells <- FindVariableGenes(bcells, 
-                    mean.function = ExpMean, 
-                    dispersion.function = LogVMR, 
-                    x.low.cutoff = 0.1, 
-                    x.high.cutoff = 5, 
-                    y.cutoff = 0.4, do.contour = F, do.plot = T)
+# bcells <- FindVariableFeatures(bcells, 
+#                     mean.function = ExpMean, 
+#                     dispersion.function = LogVMR, 
+#                     x.low.cutoff = 0.1, 
+#                     x.high.cutoff = 5, 
+#                     y.cutoff = 0.4, do.contour = F, do.plot = T)
 
-length(bcells@var.genes)
+bcells <- FindVariableFeatures(
+  bcells,
+  selection.method = "vst",
+  verbose = TRUE)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(bcells), 10)
 ```
 
 ### Control for noise
