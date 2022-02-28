@@ -136,9 +136,8 @@ cell_counts <- function(seurat_object){
 }
 ```
 
-## Mitochondrial Reads {.tabset .tabset-fade}
+## Raw data {.tabset .tabset-fade}
 
-The percentage of reads aligning to mitochondria is often an indicator of cell quality. Cells that have lysed prior to capture preferentially retain mitochondial RNA, but lose cellular cytoplasmic mRNA. As shown below there is a strong negative correlation with the number of UMIs and the proportion of reads aligning to mitochondria. Cells with less than 20% mitochondrial reads will be retained for further analysis.
 
 ```{r QC}
 # there are not unique IDs for mito genes in refseq, so I  am using this gene list
