@@ -1,5 +1,5 @@
 ---
-title: "snRNA-Seq Analysis Using BNLx/SHR - Default Analysis"
+title: "snRNA-Seq Analysis Using BNLx/SHR - 15,000 genes Analysis"
 author: "Harry A. Smith"
 date: "`R Sys.Date()`"
 output:
@@ -217,7 +217,7 @@ Cells with low UMIs tend to have a higher percentage of mitochondrial reads, sug
 After filtering the distribution of UMIs, Genes, and Proportion of mitochondrial reads are shown as selectable tabs. 
 
 ```{r, apply_filters}
-bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 2500)
+bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 15000)
 
 ```
 
@@ -380,7 +380,7 @@ To cluster the cells, we next apply modularity optimization techniques such as t
   
     
 ```{r select_dims}
-bcells <- FindNeighbors(bcells, dims = 2:20)
+bcells <- FindNeighbors(bcells, dims = 1:20)
 bcells <- FindClusters(bcells, resolution = 0.5)
 
 # reticulate::py_install(packages =
@@ -390,7 +390,7 @@ bcells <- FindClusters(bcells, resolution = 0.5)
 Seurat offers several non-linear dimensional reduction techniques, such as tSNE and UMAP, to visualize and explore these datasets. The goal of these algorithms is to learn the underlying manifold of the data in order to place similar cells together in low-dimensional space. Cells within the graph-based clusters determined above should co-localize on these dimension reduction plots. As input to the UMAP and tSNE, we suggest using the same PCs as input to the clustering analysis.
 
 ```{r run_UMAP}
-bcells <- RunUMAP(bcells, dims = 2:20)
+bcells <- RunUMAP(bcells, dims = 1:20)
 
 DimPlot(bcells, reduction = "umap")
 
@@ -399,7 +399,7 @@ DimPlot(bcells, reduction = "umap", split.by = 'expt')
 
 ```{r saveRDS}
 # save Seurat Object
-saveRDS(bcells, file = paste0(data_dir, "/", "bcells_default.rds"))
+saveRDS(bcells, file = paste0(data_dir, "/", "bcells_15kgenes.rds"))
 ```
 
 
@@ -417,7 +417,7 @@ bcells.markers %>%
     group_by(cluster) %>%
     slice_max(n = 2, order_by = avg_log2FC)
 
-write_csv(bcells.markers, file = paste0(data_dir, "/", "all_markers_all_clusters.csv"))
+write_csv(bcells.markers, file = paste0(data_dir, "/", "all_markers_all_clusters_15kgenes.csv"))
 ```
 
 
