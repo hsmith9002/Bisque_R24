@@ -380,7 +380,7 @@ To cluster the cells, we next apply modularity optimization techniques such as t
   
     
 ```{r select_dims}
-bcells <- FindNeighbors(bcells, dims = 2:20)
+bcells <- FindNeighbors(bcells, dims = 1:20)
 bcells <- FindClusters(bcells, resolution = 0.5)
 
 # reticulate::py_install(packages =
@@ -390,7 +390,7 @@ bcells <- FindClusters(bcells, resolution = 0.5)
 Seurat offers several non-linear dimensional reduction techniques, such as tSNE and UMAP, to visualize and explore these datasets. The goal of these algorithms is to learn the underlying manifold of the data in order to place similar cells together in low-dimensional space. Cells within the graph-based clusters determined above should co-localize on these dimension reduction plots. As input to the UMAP and tSNE, we suggest using the same PCs as input to the clustering analysis.
 
 ```{r run_UMAP}
-bcells <- RunUMAP(bcells, dims = 2:20)
+bcells <- RunUMAP(bcells, dims = 1:20)
 
 DimPlot(bcells, reduction = "umap")
 
@@ -400,6 +400,16 @@ DimPlot(bcells, reduction = "umap", split.by = 'expt')
 ```{r saveRDS}
 # save Seurat Object
 saveRDS(bcells, file = paste0(data_dir, "/", "bcells_default.rds"))
+```
+
+## get cell proportions by cluster
+
+```{r cell_prop}
+readRDS(file = paste0(data_dir, "/", "bcells_default.rds"))
+
+cell_prop_by_sample <- prop.table(table(bcells@meta.data$expt, Idents(bcells)))
+
+write.csv(cell_prop_by_sample, file = paste0(data_dir, "/", "bcells_default_cellprop_bysample.csv"))
 ```
 
 
