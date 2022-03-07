@@ -125,6 +125,49 @@ cellranger aggr --id=SHR_merged \
                   --normalize=mapped
 ```
 
+## Processing Oligo Samples
+
+```
+
+# Sample: 4_BNLx_2_Oligos
+## Targeted 10,000 cells
+cellranger count --id=4_BNLx_2_Oligos \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=4_BNLx_2_Oligos \
+                   --expect-cells=10000 \
+                   --localcores=20 \
+                   --localmem=64 \
+                   --include-introns \
+                   --chemistry=ARC-v1
+
+# Sample: 6_SHR_1_Oligos
+## Targeted 10,000 cells                   
+cellranger count --id=6_SHR_1_Oligos \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=6_SHR_1_Oligos \
+                   --expect-cells=10000 \
+                   --localcores=20 \
+                   --localmem=64 \
+                   --include-introns \
+                   --chemistry=ARC-v1
+                   
+# Sample: 8_SHR_2_Oligos
+## Targeted 10,000 cells                   
+cellranger count --id=8_SHR_2_Oligos \
+                   --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
+                   --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
+                   --sample=8_SHR_2_Oligos \
+                   --expect-cells=10000 \
+                   --localcores=20 \
+                   --localmem=64 \
+                   --include-introns \
+                   --chemistry=ARC-v1
+
+
+```
+
 ```
 cellranger-arc count --id=1_BNLx_1_Neurons \
                    --reference=/data/rn7/index_cellRangerArc/Rn7 \

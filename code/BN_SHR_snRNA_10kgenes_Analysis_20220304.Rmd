@@ -1,5 +1,5 @@
 ---
-title: "snRNA-Seq Analysis Using BNLx/SHR - 15,000 genes Analysis"
+title: "snRNA-Seq Analysis Using BNLx/SHR - 10,000 genes Analysis"
 author: "Harry A. Smith"
 date: "`R Sys.Date()`"
 output:
@@ -217,7 +217,7 @@ Cells with low UMIs tend to have a higher percentage of mitochondrial reads, sug
 After filtering the distribution of UMIs, Genes, and Proportion of mitochondrial reads are shown as selectable tabs. 
 
 ```{r, apply_filters}
-bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 15000)
+bcells <- subset(bcells, subset = nFeature_RNA > 250 & nFeature_RNA < 10000)
 
 ```
 
@@ -381,7 +381,7 @@ To cluster the cells, we next apply modularity optimization techniques such as t
     
 ```{r select_dims}
 bcells <- FindNeighbors(bcells, dims = 1:50)
-bcells <- FindClusters(bcells, resolution = 0.5)
+bcells <- FindClusters(bcells, resolution = 0.25)
 
 # reticulate::py_install(packages =
 #  'umap-learn')
