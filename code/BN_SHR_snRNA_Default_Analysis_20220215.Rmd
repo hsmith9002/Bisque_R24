@@ -397,19 +397,64 @@ DimPlot(bcells, reduction = "umap")
 DimPlot(bcells, reduction = "umap", split.by = 'expt')
 ```
 
-```{r saveRDS}
+```{r saveRDS, eval=FALSE}
 # save Seurat Object
 saveRDS(bcells, file = paste0(data_dir, "/", "bcells_default.rds"))
 ```
 
 ## get cell proportions by cluster
 
-```{r cell_prop}
+```{r cell_prop, eval=FALSE}
 readRDS(file = paste0(data_dir, "/", "bcells_default.rds"))
 
 cell_prop_by_sample <- prop.table(table(bcells@meta.data$expt, Idents(bcells)))
 
 write.csv(cell_prop_by_sample, file = paste0(data_dir, "/", "bcells_default_cellprop_bysample.csv"))
+```
+
+## UMAP with down sampled data set
+
+```{r down_sample}
+# get number of cells in one of the lower samples
+cells.to.sample <- (bcells@meta.data) %>%
+  filter(expt == '5_SHR_1_Neurons') %>%
+  nrow()
+
+# get vectors of cell ids for the other 3 samples except 7_SHR_2_Neurons because it doesn't have enough
+BNLx_1_Neurons.cellvect <- (bcells@meta.data) %>%
+  filter(expt == '1_BNLx_1_Neurons') %>%
+  rownames()
+BNLx_2_Neurons.cellvect <- (bcells@meta.data) %>%
+  filter(expt == '3_BNLx_2_Neurons') %>%
+  rownames()
+SHR_1_Neurons.cellvect <- (bcells@meta.data) %>%
+  filter(expt == '5_SHR_1_Neurons') %>%
+  rownames()
+SHR_2_Neurons.cellvect <- (bcells@meta.data) %>%
+  filter(expt == '7_SHR_2_Neurons') %>%
+  rownames()
+
+# Sample from bcells as many cells as there are cells in cells.to.sample
+# For reproducibility, set a random seed
+set.seed(1020)
+BNLx_1_Neurons.sampled.cells <- sample(x = BNLx_1_Neurons.cellvect, size = cells.to.sample, replace = F)
+BNLx_2_Neurons.sampled.cells <- sample(x = BNLx_2_Neurons.cellvect, size = cells.to.sample, replace = F)
+
+# concat sampled cell names for indexing bcells
+sampled.cells <- c(BNLx_1_Neurons.sampled.cells, 
+                   BNLx_2_Neurons.sampled.cells,
+                   SHR_1_Neurons.cellvect,
+                   SHR_2_Neurons.cellvect)
+
+# Subset Seurat object
+bcells.sub <- subset(x=bcells, cells = sampled.cells)
+
+# regenerate UMAPs with down sampled data
+bcells.sub <- RunUMAP(bcells.sub, dims = 1:20)
+
+DimPlot(bcells.sub, reduction = "umap")
+
+DimPlot(bcells.sub, reduction = "umap", split.by = 'expt')
 ```
 
 
@@ -419,7 +464,7 @@ Seurat can help you find markers that define clusters via differential expressio
 
 The min.pct argument requires a feature to be detected at a minimum percentage in either of the two groups of cells, and the thresh.test argument requires a feature to be differentially expressed (on average) by some amount between the two groups. You can set both of these to 0, but with a dramatic increase in time - since this will test a large number of features that are unlikely to be highly discriminatory. As another option to speed up these computations, max.cells.per.ident can be set. This will downsample each identity class to have no more cells than whatever this is set to. While there is generally going to be a loss in power, the speed increases can be significant and the most highly differentially expressed features will likely still rise to the top.
 
-```{r find_markers, eval=TRUE}
+```{r find_markers, eval=FALSE}
 # find markers for every cluster compared to all remaining cells, report only the positive
 # ones
 bcells.markers <- FindAllMarkers(bcells, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)

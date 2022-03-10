@@ -136,7 +136,7 @@ cellranger count --id=4_BNLx_2_Oligos \
                    --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
                    --sample=4_BNLx_2_Oligos \
                    --expect-cells=10000 \
-                   --localcores=20 \
+                   --localcores=24 \
                    --localmem=64 \
                    --include-introns \
                    --chemistry=ARC-v1
@@ -147,8 +147,8 @@ cellranger count --id=6_SHR_1_Oligos \
                    --transcriptome=/data/home/smiharry/Saba_Lab/R24/Rn7.2/ratRefSeq7/rn7.2_genome \
                    --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
                    --sample=6_SHR_1_Oligos \
-                   --expect-cells=10000 \
-                   --localcores=20 \
+                   --expect-cells=2000 \
+                   --localcores=24 \
                    --localmem=64 \
                    --include-introns \
                    --chemistry=ARC-v1
@@ -160,7 +160,7 @@ cellranger count --id=8_SHR_2_Oligos \
                    --fastqs=/data/hi-seq/BNLx.SHR.Brain.singleNuclei.2022-01-27/rawReads \
                    --sample=8_SHR_2_Oligos \
                    --expect-cells=10000 \
-                   --localcores=20 \
+                   --localcores=24 \
                    --localmem=64 \
                    --include-introns \
                    --chemistry=ARC-v1
