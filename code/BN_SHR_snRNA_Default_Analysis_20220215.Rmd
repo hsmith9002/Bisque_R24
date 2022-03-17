@@ -468,7 +468,7 @@ write.csv(cell_prop_by_sample_down_sample, file = paste0(data_dir, "/", "bcells_
 
 ## separtate plots  {.tabset .tabset-fade}
 
-```{r separte_plots, results='asis'}
+```{r separte_plots, results='asis', eval=FALSE}
 per_sample <- c(unique(bcells.sub@meta.data$expt))
 
 for(i in seq_along(per_sample)){
