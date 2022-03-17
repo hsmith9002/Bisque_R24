@@ -466,22 +466,6 @@ write.csv(cell_prop_by_sample_down_sample, file = paste0(data_dir, "/", "bcells_
 
 ```
 
-## separtate plots  {.tabset .tabset-fade}
-
-```{r separte_plots, results='asis', eval=FALSE}
-per_sample <- c(unique(bcells.sub@meta.data$expt))
-
-for(i in seq_along(per_sample)){
-  .col <- brewer.pal(10, "Paired")[i]
-  cat('\n### ', sample_names[i], '\n')
-  print(DimPlot(bcells.sub, reduction = "umap"))
-  cat('\n')
-}
-
-DimPlot(bcells.sub, reduction = "umap", split.by = 'expt', ncol = 2, combine = FALSE)
-
-```
-
 
 ## Differential Expression and Marker Gene Identification
 
