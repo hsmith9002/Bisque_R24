@@ -389,7 +389,7 @@ bcells <- FindClusters(bcells, resolution = 0.5)
 
 Seurat offers several non-linear dimensional reduction techniques, such as tSNE and UMAP, to visualize and explore these datasets. The goal of these algorithms is to learn the underlying manifold of the data in order to place similar cells together in low-dimensional space. Cells within the graph-based clusters determined above should co-localize on these dimension reduction plots. As input to the UMAP and tSNE, we suggest using the same PCs as input to the clustering analysis.
 
-```{r run_UMAP}
+```{r run_UMAP, results='asis'}
 bcells <- RunUMAP(bcells, dims = 1:20)
 
 DimPlot(bcells, reduction = "umap")
@@ -455,6 +455,31 @@ bcells.sub <- RunUMAP(bcells.sub, dims = 1:20)
 DimPlot(bcells.sub, reduction = "umap")
 
 DimPlot(bcells.sub, reduction = "umap", split.by = 'expt')
+```
+
+```{r cell_prp_downsample}
+cell_prop_by_sample_down_sample <- prop.table(table(bcells.sub@meta.data$expt, Idents(bcells.sub)))
+
+write.csv(cell_prop_by_sample_down_sample, file = paste0(data_dir, "/", "bcells_sub_default_cellprop_bysample.csv"))
+
+
+
+```
+
+## separtate plots  {.tabset .tabset-fade}
+
+```{r separte_plots, results='asis'}
+per_sample <- c(unique(bcells.sub@meta.data$expt))
+
+for(i in seq_along(per_sample)){
+  .col <- brewer.pal(10, "Paired")[i]
+  cat('\n### ', sample_names[i], '\n')
+  print(DimPlot(bcells.sub, reduction = "umap"))
+  cat('\n')
+}
+
+DimPlot(bcells.sub, reduction = "umap", split.by = 'expt', ncol = 2, combine = FALSE)
+
 ```
 
 
