@@ -394,7 +394,7 @@ bcells <- RunUMAP(bcells, dims = 1:20)
 
 DimPlot(bcells, reduction = "umap")
 
-DimPlot(bcells, reduction = "umap", split.by = 'expt')
+DimPlot(bcells, reduction = "umap", split.by = 'expt', ncol = 2)
 ```
 
 ```{r saveRDS, eval=FALSE}
@@ -484,6 +484,29 @@ bcells.markers %>%
 write_csv(bcells.markers, file = paste0(data_dir, "/", "all_markers_all_clusters.csv"))
 ```
 
+## CelliD Analaysis
+
+```{r cell_prop, eval=FALSE}
+library(CelliD)
+
+readRDS(file = paste0(data_dir, "/", "bcells_default.rds"))
+
+# download all cell-type gene signatures from panglaoDB
+panglao <- read_tsv("https://panglaodb.se/markers/PanglaoDB_markers_27_Mar_2020.tsv.gz")
+
+# restricting the analysis to pancreas specific gene signatues
+panglao_brain <- panglao %>% filter(organ == "Brain")
+
+# restricting to human specific genes
+panglao_brain <- panglao_brain %>%  filter(str_detect(species,"Mm"))
+
+# converting dataframes into a list of vectors, which is the format needed as input for CelliD
+panglao_brain <- panglao_brain %>%  
+  group_by(`cell type`) %>%  
+  summarise(geneset = list(`official gene symbol`))
+brain_gs <- setNames(panglao_brain$geneset, panglao_brain$`cell type`)
+
+```
 
 ## Session Info
 ```{r ses}
