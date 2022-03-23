@@ -491,6 +491,10 @@ library(CelliD)
 
 readRDS(file = paste0(data_dir, "/", "bcells_default.rds"))
 
+##################################################################
+# Obtaining pancreatic cell-type gene signatures
+##################################################################
+
 # download all cell-type gene signatures from panglaoDB
 panglao <- read_tsv("https://panglaodb.se/markers/PanglaoDB_markers_27_Mar_2020.tsv.gz")
 
@@ -505,6 +509,22 @@ panglao_brain <- panglao_brain %>%
   group_by(`cell type`) %>%  
   summarise(geneset = list(`official gene symbol`))
 brain_gs <- setNames(panglao_brain$geneset, panglao_brain$`cell type`)
+
+##################################################################
+# Obtaining gene signatures for all cell types in the Panglao database
+##################################################################
+
+#filter to get human specific genes
+panglao_all <- panglao %>%  filter(str_detect(species,"Mm"))
+
+# convert dataframes to a list of named vectors which is the format for CelliD input
+panglao_all <- panglao_all %>%  
+  group_by(`cell type`) %>%  
+  summarise(geneset = list(`official gene symbol`))
+all_gs <- setNames(panglao_all$geneset, panglao_all$`cell type`)
+
+#remove very short signatures
+all_gs <- all_gs[sapply(all_gs, length) >= 10]
 
 ```
 
