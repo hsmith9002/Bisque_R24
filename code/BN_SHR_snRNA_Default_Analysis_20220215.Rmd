@@ -486,10 +486,10 @@ write_csv(bcells.markers, file = paste0(data_dir, "/", "all_markers_all_clusters
 
 ## CelliD Analaysis
 
-```{r cell_prop, eval=FALSE}
+```{r cellid}
 library(CelliD)
 
-readRDS(file = paste0(data_dir, "/", "bcells_default.rds"))
+bcells <- readRDS(file = paste0(data_dir, "/", "bcells_default.rds"))
 
 ##################################################################
 # Obtaining pancreatic cell-type gene signatures
@@ -497,6 +497,13 @@ readRDS(file = paste0(data_dir, "/", "bcells_default.rds"))
 
 # download all cell-type gene signatures from panglaoDB
 panglao <- read_tsv("https://panglaodb.se/markers/PanglaoDB_markers_27_Mar_2020.tsv.gz")
+
+# reformat cell names to match seurat formatting
+r_ucfirst <- function (str) {
+  paste(toupper(substring(str, 1, 1)), tolower(substring(str, 2)), sep = "")
+}
+
+panglao$`official gene symbol` <- r_ucfirst(panglao$`official gene symbol`)
 
 # restricting the analysis to pancreas specific gene signatues
 panglao_brain <- panglao %>% filter(organ == "Brain")
@@ -527,6 +534,22 @@ all_gs <- setNames(panglao_all$geneset, panglao_all$`cell type`)
 all_gs <- all_gs[sapply(all_gs, length) >= 10]
 
 ```
+
+## Assessing per-cell gene signature enrichments against pre-established marker lists
+
+A per-cell assessment is performed, where the enrichment of each cell’s gene signature against each cell-type marker lists is evaluated through hypergeometric tests. No intermediate clustering steps are used here. By default, the size n of the cell’s gene signature is set to n.features = 200
+
+By default, only reference gene sets of size ≥10 are considered. In addition, hypergeometric test p-values are corrected by multiple testing for the number of gene sets evaluated. A cell is considered as enriched in those gene sets for which the hypergeometric test p-value is <1e-02 (-log10 corrected p-value >2), after Benjamini Hochberg multiple testing correction. Default settings can be modified within the RunCellHGT function.
+
+The RunCellHGT function will provide the -log10 corrected p-value for each cell and each signature evaluated, so a multi-class evaluation is enabled. When a disjointed classification is required, a cell will be assigned to the gene set with the lowest significant corrected p-value. If no significant hits are found, a cell will remain unassigned.
+```{r assessing_markers}
+# Performing per-cell hypergeometric tests against the gene signature collection
+bcells <- RunMCA(bcells)
+
+HGT_brain_gs <- RunCellHGT(bcells, pathways = brain_gs, dims = 1:50, n.features = 200)
+
+```
+
 
 ## Session Info
 ```{r ses}
