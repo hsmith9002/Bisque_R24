@@ -397,9 +397,14 @@ DimPlot(bcells, reduction = "umap")
 DimPlot(bcells, reduction = "umap", split.by = 'expt', ncol = 2)
 ```
 
+## Save Seurat object and write out UMI counts to CSV
+
 ```{r saveRDS, eval=FALSE}
 # save Seurat Object
 saveRDS(bcells, file = paste0(data_dir, "/", "bcells_default.rds"))
+
+# write out UMI counts to csv for CELLBLAST
+write.csv(bcells@assays$RNA@counts, file = paste0(data_dir, "/", "nueron_UMI_counts.csv"))
 ```
 
 ## get cell proportions by cluster
@@ -590,6 +595,70 @@ ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
 
 ```
 
+```{r assessing_markers_unbiased}
+# Performing per-cell hypergeometric tests against the gene signature collection
+# bcells <- RunMCA(bcells)
+
+HGT_brain_gs_all <- RunCellHGT(bcells, pathways = all_gs, dims = 1:50, n.features = 200)
+
+# For each cell, assess the signature with the lowest corrected p-value (max -log10 corrected p-value)
+brain_gs_prediction_all <- rownames(HGT_brain_gs_all)[apply(HGT_brain_gs_all, 2, which.max)]
+
+# For each cell, evaluate if the lowest p-value is significant
+brain_gs_prediction_signif_all <- ifelse(apply(HGT_brain_gs_all, 2, max)>2, yes = brain_gs_prediction_all, "unassigned")
+
+# Save cell type predictions as metadata within the Seurat object
+bcells$brain_gs_prediction_all <- brain_gs_prediction_signif_all
+
+
+# # Comparing the original labels with CelliD cell-type predictions based on pancreas-specific gene signatures
+# color <- c("#F8766D", "#E18A00", "#BE9C00", "#8CAB00", "#24B700", "#00BE70", "#00C1AB", "#00BBDA", "#00ACFC", "#8B93FF", "#D575FE", "#F962DD", "#FF65AC")
+# 
+# # set colors to cluster values in original data
+# ggcolor <- setNames(color,c(sort(unique(bcells$seurat_clusters))))
+# #reproduce original umap
+# OriginalPlot <- DimPlot(bcells, reduction = "umap", group.by = "seurat_clusters") + 
+#   scale_color_manual(values = ggcolor) + 
+#   theme(legend.text = element_text(size =10), aspect.ratio = 1)
+
+# set colors to cell types
+library(RColorBrewer)
+palette3_info <- brewer.pal.info[brewer.pal.info$category == "qual", ]  # Extract color info
+palette3_all <- unlist(mapply(brewer.pal,                     # Create vector with all colors
+                              palette3_info$maxcolors,
+                              rownames(palette3_info)))
+
+set.seed(9002)                                             # Set random seed
+palette3.2 <- sample(palette3_all, length(unique(bcells$brain_gs_prediction_all)))
+palette3.2 <- c(palette3.2, "grey")
+
+ggcolor_all <- setNames(palette3.2,c(sort(unique(bcells$brain_gs_prediction_all)), "unassigned"))
+# plot umap with cell type annotations
+Predplot1 <- DimPlot(bcells, reduction = "umap", group.by = "brain_gs_prediction_all") + 
+  scale_color_manual(values = ggcolor_all) + 
+  theme(legend.text = element_text(size =10), aspect.ratio = 1)
+# ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
+
+```
+
+## SingleR Analysis
+
+```{r cetah}
+library(SingleR)
+library(celldex)
+
+# get mouse reference
+ms_ref <- MouseRNAseqData()
+
+# build test data from Seurat object
+counts = bcells@assays$RNA@counts
+input = SingleCellExperiment(assays = list(counts = counts),
+                             reducedDims = SimpleList(UMAP = bcells@reductions$umap@cell.embeddings))
+
+# run SingleR
+pred.hesc <- SingleR(test = input, ref = ms_ref, assay.type.test=1,
+    labels = ms_ref$label.main)
+```
 
 ## Session Info
 ```{r ses}
