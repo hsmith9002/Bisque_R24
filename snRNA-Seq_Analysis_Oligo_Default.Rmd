@@ -1,0 +1,69 @@
+---
+title: "snRNA-Seq Analysis Using BNLx/SHR - Oligo - Default"
+author: "Harry A. Smith"
+date: `R Sys.Date()`
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    fig_caption: yes
+    fig_retina: 1 
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(cache.lazy = FALSE)
+```
+
+
+```{r libs, message=FALSE, warning=FALSE, echo=FALSE}
+library(Seurat)
+library(cowplot)
+library(RColorBrewer)
+library(Matrix)
+library(tidyverse)
+library(R.utils)
+library(viridis)
+library(patchwork)
+
+data_dir <- "/Users/smithh/Documents/Saba_Lab/cellranger_results"
+tcols <- rev(brewer.pal(11, "RdGy")[c(1:5, 7)])[1:6]
+```
+
+## Experiment Summary
+
+Sample | Description
+------------- | ---------------- 
+1_BNLx_1_Neurons | BNLx Biological Replicate 1 
+3_BNLx_2_Neurons | BNLx Biological Replicate 2
+5_SHR_1_Neurons | SHR Biological Replicate 1  
+7_SHR_2_Neurons | SHR Biological Replicate 2
+
+```{r in_data}
+
+samples <- c(
+  "1_BNLx_1_Neurons",
+  "3_BNLx_2_Neurons",
+  "5_SHR_1_Neurons",
+  "7_SHR_2_Neurons")
+
+sample_paths <- file.path(data_dir ,
+                          samples)
+
+names(sample_paths) <- samples
+
+bcells <- Seurat::Read10X(sample_paths)
+```
+
+```{r create_seurat, message = F, results = 'hide', warning = F}
+bcells <- CreateSeuratObject(counts = bcells, 
+                              min.cells = 3,
+                              min.genes = 200, 
+                              project = "Saba",
+                              names.field = c(1,2), 
+                              names.delim = "_")
+```
