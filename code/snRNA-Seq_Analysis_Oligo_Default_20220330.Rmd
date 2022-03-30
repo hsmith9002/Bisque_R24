@@ -252,7 +252,7 @@ oligos <- NormalizeData(oligos, normalization.method = "LogNormalize", scale.fac
 # # add pseudocount of 1 consistent with seurat
 # oligos@data <- assay(sce, "normcounts") %>% 
 #   log1p(.) %>% 
-#   as(., "sparseMatrix")
+#   as(., "sparseMatrix") 
 # 
 # # all seurat calc paramters are stored and occasionally checked
 # # add normalization method to avoid warnings
