@@ -473,3 +473,178 @@ oligos.markers %>%
 
 write_csv(oligos.markers, file = paste0(data_dir, "/", "oligos_all_markers_all_clusters.csv"))
 ```
+
+## CelliD Analysis
+
+```{r cellid}
+library(CelliD)
+
+oligos <- readRDS(file = paste0(data_dir, "/", "oligos_default.rds"))
+
+##################################################################
+# Obtaining pancreatic cell-type gene signatures
+##################################################################
+
+# download all cell-type gene signatures from panglaoDB
+panglao <- read_tsv("https://panglaodb.se/markers/PanglaoDB_markers_27_Mar_2020.tsv.gz")
+
+# reformat cell names to match seurat formatting
+r_ucfirst <- function (str) {
+  paste(toupper(substring(str, 1, 1)), tolower(substring(str, 2)), sep = "")
+}
+
+panglao$`official gene symbol` <- r_ucfirst(panglao$`official gene symbol`)
+
+# restricting the analysis to pancreas specific gene signatues
+panglao_brain <- panglao %>% filter(organ == "Brain")
+
+# restricting to human specific genes
+panglao_brain <- panglao_brain %>%  filter(str_detect(species,"Mm"))
+
+# converting dataframes into a list of vectors, which is the format needed as input for CelliD
+panglao_brain <- panglao_brain %>%  
+  group_by(`cell type`) %>%  
+  summarise(geneset = list(`official gene symbol`))
+brain_gs <- setNames(panglao_brain$geneset, panglao_brain$`cell type`)
+
+##################################################################
+# Obtaining gene signatures for all cell types in the Panglao database
+##################################################################
+
+#filter to get human specific genes
+panglao_all <- panglao %>%  filter(str_detect(species,"Mm"))
+
+# convert dataframes to a list of named vectors which is the format for CelliD input
+panglao_all <- panglao_all %>%  
+  group_by(`cell type`) %>%  
+  summarise(geneset = list(`official gene symbol`))
+all_gs <- setNames(panglao_all$geneset, panglao_all$`cell type`)
+
+#remove very short signatures
+all_gs <- all_gs[sapply(all_gs, length) >= 10]
+
+```
+
+## Assessing per-cell gene signature enrichments against pre-established marker lists
+
+A per-cell assessment is performed, where the enrichment of each cell’s gene signature against each cell-type marker lists is evaluated through hypergeometric tests. No intermediate clustering steps are used here. By default, the size n of the cell’s gene signature is set to n.features = 200
+
+By default, only reference gene sets of size ≥10 are considered. In addition, hypergeometric test p-values are corrected by multiple testing for the number of gene sets evaluated. A cell is considered as enriched in those gene sets for which the hypergeometric test p-value is <1e-02 (-log10 corrected p-value >2), after Benjamini Hochberg multiple testing correction. Default settings can be modified within the RunCellHGT function.
+
+The RunCellHGT function will provide the -log10 corrected p-value for each cell and each signature evaluated, so a multi-class evaluation is enabled. When a disjointed classification is required, a cell will be assigned to the gene set with the lowest significant corrected p-value. If no significant hits are found, a cell will remain unassigned.
+
+*There seems to be 2 main things that affect the annoation outcome. The first is the amount of top features to consider in hypergeometric test. The more genes included the more cells get assigned an annotation. The second is allowing more annotated cells based on less conservative p-value cutoff*
+```{r assessing_markers}
+# Performing per-cell hypergeometric tests against the gene signature collection
+oligos <- RunMCA(oligos)
+
+HGT_brain_gs <- RunCellHGT(oligos, pathways = brain_gs, dims = 1:50, n.features = 1000)
+
+# For each cell, assess the signature with the lowest corrected p-value (max -log10 corrected p-value)
+brain_gs_prediction <- rownames(HGT_brain_gs)[apply(HGT_brain_gs, 2, which.max)]
+
+# For each cell, evaluate if the lowest p-value is significant
+brain_gs_prediction_signif <- ifelse(apply(HGT_brain_gs, 2, max)>1, yes = brain_gs_prediction, "unassigned")
+
+# Save cell type predictions as metadata within the Seurat object
+oligos$brain_gs_prediction <- brain_gs_prediction_signif
+
+
+# Comparing the original labels with CelliD cell-type predictions based on pancreas-specific gene signatures
+color <- c("#F8766D", "#E18A00", "#BE9C00", "#8CAB00", "#24B700", "#00BE70", "#00C1AB", "#00BBDA", "#00ACFC", "#8B93FF", "#D575FE", "#F962DD", "#FF65AC")
+
+# set colors to cluster values in original data
+ggcolor <- setNames(color,c(sort(unique(bcells$seurat_clusters))))
+#reproduce original umap
+OriginalPlot <- DimPlot(oligos, reduction = "umap", group.by = "seurat_clusters") + 
+  scale_color_manual(values = ggcolor) + 
+  theme(legend.text = element_text(size =10), aspect.ratio = 1)
+
+# set colors to cell types
+library(RColorBrewer)
+palette3_info <- brewer.pal.info[brewer.pal.info$category == "qual", ]  # Extract color info
+palette3_all <- unlist(mapply(brewer.pal,                     # Create vector with all colors
+                              palette3_info$maxcolors,
+                              rownames(palette3_info)))
+
+set.seed(9002)                                             # Set random seed
+palette3 <- sample(palette3_all, length(unique(bcells$brain_gs_prediction)))
+palette3 <- c(palette3, "grey")
+
+ggcolor <- setNames(palette3,c(sort(unique(bcells$brain_gs_prediction)), "unassigned"))
+# plot umap with cell type annotations
+Predplot1 <- DimPlot(oligos, reduction = "umap", group.by = "brain_gs_prediction") + 
+  scale_color_manual(values = ggcolor) + 
+  theme(legend.text = element_text(size =10), aspect.ratio = 1)
+ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
+
+```
+
+```{r assessing_markers_unbiased}
+# Performing per-cell hypergeometric tests against the gene signature collection
+# bcells <- RunMCA(bcells)
+
+HGT_brain_gs_all <- RunCellHGT(oligos, pathways = all_gs, dims = 1:50, n.features = 200)
+
+# For each cell, assess the signature with the lowest corrected p-value (max -log10 corrected p-value)
+brain_gs_prediction_all <- rownames(HGT_brain_gs_all)[apply(HGT_brain_gs_all, 2, which.max)]
+
+# For each cell, evaluate if the lowest p-value is significant
+brain_gs_prediction_signif_all <- ifelse(apply(HGT_brain_gs_all, 2, max)>2, yes = brain_gs_prediction_all, "unassigned")
+
+# Save cell type predictions as metadata within the Seurat object
+oligos$brain_gs_prediction_all <- brain_gs_prediction_signif_all
+
+
+# # Comparing the original labels with CelliD cell-type predictions based on pancreas-specific gene signatures
+# color <- c("#F8766D", "#E18A00", "#BE9C00", "#8CAB00", "#24B700", "#00BE70", "#00C1AB", "#00BBDA", "#00ACFC", "#8B93FF", "#D575FE", "#F962DD", "#FF65AC")
+# 
+# # set colors to cluster values in original data
+# ggcolor <- setNames(color,c(sort(unique(bcells$seurat_clusters))))
+# #reproduce original umap
+# OriginalPlot <- DimPlot(bcells, reduction = "umap", group.by = "seurat_clusters") + 
+#   scale_color_manual(values = ggcolor) + 
+#   theme(legend.text = element_text(size =10), aspect.ratio = 1)
+
+# set colors to cell types
+library(RColorBrewer)
+palette3_info <- brewer.pal.info[brewer.pal.info$category == "qual", ]  # Extract color info
+palette3_all <- unlist(mapply(brewer.pal,                     # Create vector with all colors
+                              palette3_info$maxcolors,
+                              rownames(palette3_info)))
+
+set.seed(9002)                                             # Set random seed
+palette3.2 <- sample(palette3_all, length(unique(bcells$brain_gs_prediction_all)))
+palette3.2 <- c(palette3.2, "grey")
+
+ggcolor_all <- setNames(palette3.2,c(sort(unique(bcells$brain_gs_prediction_all)), "unassigned"))
+# plot umap with cell type annotations
+Predplot1 <- DimPlot(oligos, reduction = "umap", group.by = "brain_gs_prediction_all") + 
+  scale_color_manual(values = ggcolor_all) + 
+  theme(legend.text = element_text(size =10), aspect.ratio = 1)
+# ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
+
+```
+
+## SingleR Analysis
+
+```{r singler}
+library(SingleR)
+library(celldex)
+
+# get mouse reference
+ms_ref <- MouseRNAseqData()
+
+# build test data from Seurat object
+counts = oligos@assays$RNA@counts
+input = SingleCellExperiment(assays = list(counts = counts),
+                             reducedDims = SimpleList(UMAP = oligos@reductions$umap@cell.embeddings))
+
+# run SingleR
+pred.hesc <- SingleR(test = input, ref = ms_ref, assay.type.test=1,
+    labels = ms_ref$label.main)
+```
+
+## Session Info
+```{r ses}
+sessionInfo()
