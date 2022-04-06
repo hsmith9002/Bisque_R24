@@ -554,7 +554,7 @@ oligos$brain_gs_prediction <- brain_gs_prediction_signif
 color <- c("#F8766D", "#E18A00", "#BE9C00", "#8CAB00", "#24B700", "#00BE70", "#00C1AB", "#00BBDA", "#00ACFC", "#8B93FF", "#D575FE", "#F962DD", "#FF65AC")
 
 # set colors to cluster values in original data
-ggcolor <- setNames(color,c(sort(unique(bcells$seurat_clusters))))
+ggcolor <- setNames(color,c(sort(unique(oligos$seurat_clusters))))
 #reproduce original umap
 OriginalPlot <- DimPlot(oligos, reduction = "umap", group.by = "seurat_clusters") + 
   scale_color_manual(values = ggcolor) + 
@@ -568,10 +568,10 @@ palette3_all <- unlist(mapply(brewer.pal,                     # Create vector wi
                               rownames(palette3_info)))
 
 set.seed(9002)                                             # Set random seed
-palette3 <- sample(palette3_all, length(unique(bcells$brain_gs_prediction)))
+palette3 <- sample(palette3_all, length(unique(oligos$brain_gs_prediction)))
 palette3 <- c(palette3, "grey")
 
-ggcolor <- setNames(palette3,c(sort(unique(bcells$brain_gs_prediction)), "unassigned"))
+ggcolor <- setNames(palette3,c(sort(unique(oligos$brain_gs_prediction)), "unassigned"))
 # plot umap with cell type annotations
 Predplot1 <- DimPlot(oligos, reduction = "umap", group.by = "brain_gs_prediction") + 
   scale_color_manual(values = ggcolor) + 
@@ -614,21 +614,21 @@ palette3_all <- unlist(mapply(brewer.pal,                     # Create vector wi
                               rownames(palette3_info)))
 
 set.seed(9002)                                             # Set random seed
-palette3.2 <- sample(palette3_all, length(unique(bcells$brain_gs_prediction_all)))
+palette3.2 <- sample(palette3_all, length(unique(oligos$brain_gs_prediction_all)))
 palette3.2 <- c(palette3.2, "grey")
 
-ggcolor_all <- setNames(palette3.2,c(sort(unique(bcells$brain_gs_prediction_all)), "unassigned"))
+ggcolor_all <- setNames(palette3.2,c(sort(unique(oligos$brain_gs_prediction_all)), "unassigned"))
 # plot umap with cell type annotations
 Predplot1 <- DimPlot(oligos, reduction = "umap", group.by = "brain_gs_prediction_all") + 
   scale_color_manual(values = ggcolor_all) + 
   theme(legend.text = element_text(size =10), aspect.ratio = 1)
 # ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
-
+Predplot1
 ```
 
 ## SingleR Analysis
 
-```{r singler}
+```{r singler, eval=FALSE}
 library(SingleR)
 library(celldex)
 
