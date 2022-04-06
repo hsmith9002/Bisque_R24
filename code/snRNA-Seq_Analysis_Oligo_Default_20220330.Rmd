@@ -476,7 +476,7 @@ write_csv(oligos.markers, file = paste0(data_dir, "/", "oligos_all_markers_all_c
 
 ## CelliD Analysis
 
-```{r cellid}
+```{r cellid, message=FALSE}
 library(CelliD)
 library(ggpubr)
 
@@ -535,7 +535,7 @@ By default, only reference gene sets of size ≥10 are considered. In addition, 
 The RunCellHGT function will provide the -log10 corrected p-value for each cell and each signature evaluated, so a multi-class evaluation is enabled. When a disjointed classification is required, a cell will be assigned to the gene set with the lowest significant corrected p-value. If no significant hits are found, a cell will remain unassigned.
 
 *There seems to be 2 main things that affect the annoation outcome. The first is the amount of top features to consider in hypergeometric test. The more genes included the more cells get assigned an annotation. The second is allowing more annotated cells based on less conservative p-value cutoff*
-```{r assessing_markers}
+```{r assessing_markers, message=FALSE}
 # Performing per-cell hypergeometric tests against the gene signature collection
 oligos <- RunMCA(oligos)
 
@@ -560,7 +560,7 @@ ggcolor <- setNames(color,c(sort(unique(oligos$seurat_clusters))))
 OriginalPlot <- DimPlot(oligos, reduction = "umap", group.by = "seurat_clusters") + 
   scale_color_manual(values = ggcolor) + 
   theme(legend.text = element_text(size =10), aspect.ratio = 1)
-
+OriginalPlot
 # set colors to cell types
 library(RColorBrewer)
 palette3_info <- brewer.pal.info[brewer.pal.info$category == "qual", ]  # Extract color info
@@ -577,7 +577,7 @@ ggcolor <- setNames(palette3,c(sort(unique(oligos$brain_gs_prediction)), "unassi
 Predplot1 <- DimPlot(oligos, reduction = "umap", group.by = "brain_gs_prediction") + 
   scale_color_manual(values = ggcolor) + 
   theme(legend.text = element_text(size =10), aspect.ratio = 1)
-ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
+Predplot1
 
 ```
 
