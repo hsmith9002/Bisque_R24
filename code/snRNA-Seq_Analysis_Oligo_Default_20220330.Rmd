@@ -478,6 +478,7 @@ write_csv(oligos.markers, file = paste0(data_dir, "/", "oligos_all_markers_all_c
 
 ```{r cellid}
 library(CelliD)
+library(ggpubr)
 
 oligos <- readRDS(file = paste0(data_dir, "/", "oligos_default.rds"))
 
