@@ -644,6 +644,15 @@ input = SingleCellExperiment(assays = list(counts = counts),
 # run SingleR
 pred.hesc <- SingleR(test = input, ref = ms_ref, assay.type.test=1,
     labels = ms_ref$label.main)
+
+knitr::kable(table(pred.hesc$labels),
+             caption = "Cell type distribution - SingleR")
+```
+
+```{r pseudo_counts}
+library(purrr)
+
+
 ```
 
 ## Session Info

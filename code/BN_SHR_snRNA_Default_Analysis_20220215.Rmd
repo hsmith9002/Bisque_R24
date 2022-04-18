@@ -574,7 +574,7 @@ ggcolor <- setNames(color,c(sort(unique(bcells$seurat_clusters))))
 OriginalPlot <- DimPlot(bcells, reduction = "umap", group.by = "seurat_clusters") + 
   scale_color_manual(values = ggcolor) + 
   theme(legend.text = element_text(size =10), aspect.ratio = 1)
-
+OriginalPlot
 # set colors to cell types
 library(RColorBrewer)
 palette3_info <- brewer.pal.info[brewer.pal.info$category == "qual", ]  # Extract color info
@@ -591,8 +591,8 @@ ggcolor <- setNames(palette3,c(sort(unique(bcells$brain_gs_prediction)), "unassi
 Predplot1 <- DimPlot(bcells, reduction = "umap", group.by = "brain_gs_prediction") + 
   scale_color_manual(values = ggcolor) + 
   theme(legend.text = element_text(size =10), aspect.ratio = 1)
-ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
-
+# ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
+Predplot1
 ```
 
 ```{r assessing_markers_unbiased}
@@ -638,7 +638,7 @@ Predplot1 <- DimPlot(bcells, reduction = "umap", group.by = "brain_gs_prediction
   scale_color_manual(values = ggcolor_all) + 
   theme(legend.text = element_text(size =10), aspect.ratio = 1)
 # ggarrange(OriginalPlot, Predplot1, legend = "top",common.legend = TRUE)
-
+Predplot1
 ```
 
 ## SingleR Analysis
@@ -658,6 +658,21 @@ input = SingleCellExperiment(assays = list(counts = counts),
 # run SingleR
 pred.hesc <- SingleR(test = input, ref = ms_ref, assay.type.test=1,
     labels = ms_ref$label.main)
+table(pred.hesc$labels)
+```
+
+## Validate cell types with Enrichment
+
+```{r enrichment, eval=FALSE}
+library(diffEnrich)
+library(clusterProfiler)
+library(enrichR)
+# load DE gene data
+bcells.markers <- read.csv(file = paste0(data_dir, "/", "all_markers_all_clusters.csv"))
+
+
+
+
 ```
 
 ## Session Info
