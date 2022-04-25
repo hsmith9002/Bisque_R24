@@ -748,6 +748,80 @@ table(sce$seurat_clusters, sce$expt)
 
 ```
 
+
+## Sub-cluster ing Analysis
+
+```{r subclustering}
+# inport oligo seurat object
+oligos <- readRDS(file = paste0(data_dir, "/", "oligos_default.rds"))
+
+# copy to a new object for subsetting
+oligos_sub <- oligos
+
+# subset seurat object (clusters 1,2,3,6)
+oligos_sub <- subset(oligos_sub, idents = c(1,2,3,6))
+
+# identify variable genes
+oligos_sub <- FindVariableFeatures(
+  oligos_sub,
+  selection.method = "vst",
+  verbose = TRUE)
+
+# Identify the 10 most highly variable genes
+top10_sub <- head(VariableFeatures(oligos_sub), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(oligos_sub)
+plot2 <- LabelPoints(plot = plot1, points = top10_sub, repel = TRUE, xnudge = 0, ynudge = 0)
+plot2
+
+# scale data
+all.genes <- rownames(oligos_sub)
+oligos_sub <- ScaleData(oligos_sub, features = all.genes, split.by = 'expt')
+
+# run PCA
+oligos_sub <- RunPCA(oligos_sub, features = VariableFeatures(object = oligos_sub))
+
+VizDimLoadings(oligos_sub, dims = 1:2, reduction = "pca")
+
+DimPlot(oligos_sub, reduction = "pca")
+DimPlot(oligos_sub, reduction = "pca", split.by = 'expt')
+
+# jackstraw
+oligos_sub <- JackStraw(oligos_sub, num.replicate = 100)
+oligos_sub <- ScoreJackStraw(oligos_sub, dims = 1:20)
+
+# find neighbors
+oligos_sub <- FindNeighbors(oligos_sub, dims = 1:20)
+oligos_sub <- FindClusters(oligos_sub, resolution = 0.5)
+ElbowPlot(oligos_sub)
+
+# run UMAP
+oligos_sub <- RunUMAP(oligos_sub, dims = 1:20)
+
+DimPlot(oligos_sub, reduction = "umap")
+
+DimPlot(oligos_sub, reduction = "umap", split.by = 'expt', ncol = 2)
+```
+
+```{r saveRDS, eval=FALSE}
+# save Seurat Object
+saveRDS(oligos_sub, file = paste0(data_dir, "/", "oligos_subcluster.rds"))
+
+# write out UMI counts to csv for CELLBLAST
+write.csv(oligos_sub@assays$RNA@counts, file = paste0(data_dir, "/", "oligos_subcluster_UMI_counts.csv"))
+```
+
+## get cell proportions by cluster
+
+```{r cell_prop, eval=FALSE}
+readRDS(file = paste0(data_dir, "/", "oligos_subcluster.rds"))
+
+cell_prop_by_sample <- prop.table(table(oligos_sub@meta.data$expt, Idents(oligos_sub)))
+
+write.csv(cell_prop_by_sample, file = paste0(data_dir, "/", "oligos_subcluster_cellprop_bysample.csv"))
+```
+
 ## Session Info
 ```{r ses}
 sessionInfo()
