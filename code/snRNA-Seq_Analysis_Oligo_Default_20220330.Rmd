@@ -815,11 +815,22 @@ write.csv(oligos_sub@assays$RNA@counts, file = paste0(data_dir, "/", "oligos_sub
 ## get cell proportions by cluster
 
 ```{r cell_prop, eval=FALSE}
-readRDS(file = paste0(data_dir, "/", "oligos_subcluster.rds"))
+oligos_sub <- readRDS(file = paste0(data_dir, "/", "oligos_subcluster.rds"))
 
 cell_prop_by_sample <- prop.table(table(oligos_sub@meta.data$expt, Idents(oligos_sub)))
 
 write.csv(cell_prop_by_sample, file = paste0(data_dir, "/", "oligos_subcluster_cellprop_bysample.csv"))
+```
+
+```{r find_markers, eval=FALSE}
+# find markers for every cluster compared to all remaining cells, report only the positive
+# ones
+oligos_sub.markers <- FindAllMarkers(oligos_sub, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+oligos_sub.markers %>%
+    group_by(cluster) %>%
+    slice_max(n = 2, order_by = avg_log2FC)
+
+write_csv(oligos_sub.markers, file = paste0(data_dir, "/", "oligos_all_markers_subclusters.csv"))
 ```
 
 ## Session Info

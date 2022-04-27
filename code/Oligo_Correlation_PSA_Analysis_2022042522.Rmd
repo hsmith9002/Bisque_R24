@@ -21,6 +21,8 @@ knitr::opts_chunk$set(cache.lazy = FALSE)
 
 
 ```{r libs, message=FALSE, warning=FALSE, echo=FALSE}
+library(tidyverse)
+library(data.table)
 library(Seurat)
 library(cowplot)
 library(RColorBrewer)
@@ -148,5 +150,12 @@ str(pb)
 # Print out the table of cells in each cluster-sample group
 options(width = 100)
 table(sce$seurat_clusters, sce$expt)
+```
 
+## Gene Correlation Analysis
+
+```{r gene_correlation}
+library(qlcMatrix)
+# Calculate spearman correlations on all genes by cluster
+test <- as.da
 ```
