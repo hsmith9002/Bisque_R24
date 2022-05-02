@@ -748,6 +748,79 @@ table(sce$seurat_clusters, sce$expt)
 
 ```
 
+## Psuedo Bulk using Muscat
+
+```{r, muscat}
+library(muscat)
+
+oligos <- readRDS(file = paste0(data_dir, "/", "oligos_default.rds"))
+
+# Extract raw counts and metadata to create SingleCellExperiment object
+counts <- oligos@assays$RNA@counts 
+
+metadata <- oligos@meta.data
+
+# Set up metadata as desired for aggregation and DE analysis
+metadata$seurat_clusters <- factor(oligos@active.ident)
+
+# Create single cell experiment object
+sce <- SingleCellExperiment(assays = list(counts = counts), 
+                           colData = metadata)
+
+# Identify groups for aggregation of counts
+groups <- colData(sce)[, c("seurat_clusters", "expt")]
+
+
+# Named vector of cluster names
+kids <- purrr::set_names(levels(sce$seurat_clusters))
+kids
+
+# Total number of clusters
+nk <- length(kids)
+nk
+
+# Named vector of sample names
+sids <- purrr::set_names(levels(sce$expt))
+
+# Total number of samples 
+ns <- length(sids)
+ns
+
+##################################
+# Generate sample level metadata
+##################################
+
+## Determine the number of cells per sample
+table(sce$expt)
+
+## Turn named vector into a numeric vector of number of cells per sample
+n_cells <- as.numeric(table(sce$expt))
+
+## Determine how to reoder the samples (rows) of the metadata to match the order of sample names in sids vector
+m <- match(sids, sce$expt)
+
+## Create the sample level metadata by combining the reordered metadata with the number of cells corresponding to each sample.
+ei <- data.frame(colData(sce)[m, ], 
+                  n_cells, row.names = NULL) %>% 
+                select(-"seurat_clusters")
+ei
+
+#####################################################
+# Aggregate the counts per sample_id and cluster_id
+#####################################################
+
+# Subset metadata to only include the cluster and sample IDs to aggregate across
+groups <- colData(sce)[, c("seurat_clusters", "expt")]
+
+pb_mus <- aggregateData(sce,
+    assay = "counts", fun = "sum",
+    by = c("seurat_clusters", "expt"))
+head(assay(pb_mus))
+
+saveRDS(pb_mus, file = paste0(data_dir, "/", "oligos_muscat.rds"))
+
+```
+
 
 ## Sub-cluster ing Analysis
 

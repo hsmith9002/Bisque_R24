@@ -24,6 +24,7 @@ knitr::opts_chunk$set(cache.lazy = FALSE)
 library(tidyverse)
 library(data.table)
 library(Seurat)
+library(scater)
 library(cowplot)
 library(RColorBrewer)
 library(Matrix)
@@ -34,6 +35,8 @@ library(patchwork)
 library(Matrix.utils)
 library(magrittr)
 library(CelliD)
+library(muscat)
+library(purrr)
 
 data_dir <- "/Users/smithh/Documents/Saba_Lab/cellranger_results"
 tcols <- rev(brewer.pal(11, "RdGy")[c(1:5, 7)])[1:6]
@@ -157,5 +160,162 @@ table(sce$seurat_clusters, sce$expt)
 ```{r gene_correlation}
 library(qlcMatrix)
 # Calculate spearman correlations on all genes by cluster
-test <- as.da
+test <- as.data.frame(pb$`0`)
+test <- data.table(test)
+test_t <- as.data.frame(t(test))
+colnames(test_t) <- rownames(pb$`0`)
+
+# get vector of variable genes
+vargenes <- VariableFeatures(oligos_sub)
+
+#subset test_t to only inlcude variable genes
+test_t <- test_t[, which(colnames(test_t) %in% vargenes)]
+
+cor_res <- as.data.frame(corSparse(test_t))
+
+colnames(cor_res) <- colnames(test_t)
+rownames(cor_res) <- colnames(test_t)
+
+res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
+    tidyr::pivot_longer(-rowname)
+
+```
+
+## Psuedo Bulk using Muscat
+
+```{r, muscat}
+library(muscat)
+
+# clean up sample names
+sce$expt <- gsub('4', 'BN', sce$expt)
+sce$expt <- gsub('6', 'SHR1', sce$expt)
+sce$expt <- gsub('8', 'SHR2', sce$expt)
+
+##################################
+# sce QC
+##################################
+
+# remove undetected genes
+sce <- sce[rowSums(counts(sce) > 0) > 0, ]
+dim(sce)
+
+qc <- perCellQCMetrics(sce)
+
+# remove cells with few or many detected genes
+ol <- isOutlier(metric = qc$detected, nmads = 2, log = TRUE)
+sce <- sce[, !ol]
+dim(sce)
+
+# remove lowly expressed genes
+sce <- sce[rowSums(counts(sce) > 1) >= 10, ]
+dim(sce)
+
+# compute sum-factors & normalize
+sce <- computeLibraryFactors(sce)
+sce <- logNormCounts(sce)
+
+##########################################
+# Prep SCE object for down stream analysis
+##########################################
+
+sce$id <- paste0(sce$expt, sce$seurat_clusters)
+(sce <- prepSCE(sce, 
+    kid = "seurat_clusters", # subpopulation assignments
+    gid = "expt",  # group IDs (ctrl/stim)
+    sid = "id",   # sample IDs (ctrl/stim.1234)
+    drop = TRUE))  # drop all other colData columns
+
+##################################
+# Generate sample level metadata
+##################################
+
+## Determine the number of cells per sample
+table(sce$expt)
+
+## Turn named vector into a numeric vector of number of cells per sample
+n_cells <- as.numeric(table(sce$expt))
+
+## Determine how to reoder the samples (rows) of the metadata to match the order of sample names in sids vector
+m <- match(sids, sce$expt)
+
+## Create the sample level metadata by combining the reordered metadata with the number of cells corresponding to each sample.
+# ei <- data.frame(colData(sce)[m, ], 
+#                   n_cells, row.names = NULL) %>% 
+#                 select(-"seurat_clusters")
+# ei
+
+#####################################################
+# Dimension Reduction and Plotting
+#####################################################
+
+# compute UMAP using 1st 20 PCs
+sce <- runUMAP(sce, pca = 20)
+
+# wrapper to prettify reduced dimension plots
+.plot_dr <- function(sce, dr, col)
+  plotReducedDim(sce, dimred = dr, colour_by = col) +
+    guides(fill = guide_legend(override.aes = list(alpha = 1, size = 3))) +
+    theme_minimal() + theme(aspect.ratio = 1)
+
+# downsample to max. 100 cells per cluster
+cs_by_k <- split(colnames(sce), sce$cluster_id)
+cs100 <- unlist(sapply(cs_by_k, function(u) 
+  sample(u, min(length(u), 100))))
+
+# plot t-SNE & UMAP colored by cluster & group ID
+for (dr in c("TSNE", "UMAP"))
+  for (col in c("seurat_clusters", "expt"))
+    .plot_dr(sce[, cs100], dr, col)
+
+#####################################################
+# Aggregate the counts per sample_id and cluster_id
+#####################################################
+
+# Subset metadata to only include the cluster and sample IDs to aggregate across
+groups <- colData(sce)[, c("cluster_id", "sample_id")]
+
+pb_mus <- aggregateData(sce,
+    assay = "counts", fun = "sum",
+    by = c("cluster_id", "sample_id"))
+head(assay(pb_mus))
+
+#####################################################
+# Sample level DS Ananlysis
+#####################################################
+
+
+
+# # run DS analysis
+# res <- pbDS(pb_mus, verbose = TRUE)
+# # access results table for 1st comparison
+# tbl <- res$table[[1]]
+# 
+# # view results for 1st cluster
+# k1 <- tbl[[1]]
+# head(format(k1[, -ncol(k1)], digits = 2))
+```
+
+## Correlation analysis - muscat data
+
+```{r, cor_muscat}
+# Calculate spearman correlations on all genes by cluster
+test <- as.data.frame(pb_mus$`0`)
+test <- data.table(test)
+test_t <- as.data.frame(t(test))
+colnames(test_t) <- rownames(pb$`0`)
+
+# get vector of variable genes
+vargenes <- VariableFeatures(oligos_sub)
+
+#subset test_t to only inlcude variable genes
+test_t <- test_t[, which(colnames(test_t) %in% vargenes)]
+
+cor_res <- as.data.frame(corSparse(test_t))
+
+colnames(cor_res) <- colnames(test_t)
+rownames(cor_res) <- colnames(test_t)
+
+res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
+    tidyr::pivot_longer(-rowname)
+
 ```
