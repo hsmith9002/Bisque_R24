@@ -298,22 +298,40 @@ head(assay(pb_mus))
 ## Correlation analysis - muscat data
 
 ```{r, cor_muscat}
-# Calculate spearman correlations on all genes by cluster
-test <- as.data.frame(pb_mus$`0`)
-test <- data.table(test)
-test_t <- as.data.frame(t(test))
-colnames(test_t) <- rownames(pb$`0`)
+library(qlcMatrix)
 
-# get vector of variable genes
-vargenes <- VariableFeatures(oligos_sub)
+pc_matrix <- as.data.frame(assay((pb_mus)))
 
-#subset test_t to only inlcude variable genes
-test_t <- test_t[, which(colnames(test_t) %in% vargenes)]
+# build data frames by cluster
+cluster0pc <- as.data.frame(cbind(pc_matrix$BN_BNLx0, pc_matrix$SHR1_SHR0, pc_matrix$SHR2_SHR0))
+colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
+rownames(cluster0pc) <- rownames(pc_matrix)
 
-cor_res <- as.data.frame(corSparse(test_t))
+cluster1pc <- as.data.frame(cbind(pc_matrix$BN_BNLx1, pc_matrix$SHR1_SHR1, pc_matrix$SHR2_SHR1))
+colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
+rownames(cluster0pc) <- rownames(pc_matrix)
 
-colnames(cor_res) <- colnames(test_t)
-rownames(cor_res) <- colnames(test_t)
+cluster2pc <- as.data.frame(cbind(pc_matrix$BN_BNLx2, pc_matrix$SHR1_SHR2, pc_matrix$SHR2_SHR2))
+colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
+rownames(cluster0pc) <- rownames(pc_matrix)
+
+cluster3pc <- as.data.frame(cbind(pc_matrix$BN_BNLx3, pc_matrix$SHR1_SHR3, pc_matrix$SHR2_SHR3))
+colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
+rownames(cluster0pc) <- rownames(pc_matrix)
+
+cluster4pc <- as.data.frame(cbind(pc_matrix$BN_BNLx4, pc_matrix$SHR1_SHR4, pc_matrix$SHR2_SHR4))
+colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
+rownames(cluster0pc) <- rownames(pc_matrix)
+
+cluster5pc <- as.data.frame(cbind(pc_matrix$BN_BNLx5, pc_matrix$SHR1_SHR5, pc_matrix$SHR2_SHR5))
+colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
+rownames(cluster0pc) <- rownames(pc_matrix)
+
+cluster6pc <- as.data.frame(cbind(pc_matrix$BN_BNLx6, pc_matrix$SHR1_SHR6, pc_matrix$SHR2_SHR6))
+colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
+rownames(cluster0pc) <- rownames(pc_matrix)
+
+cor_res <- as.data.frame(cor(t(cluster0pc), method = 'pearson'))
 
 res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
     tidyr::pivot_longer(-rowname)
