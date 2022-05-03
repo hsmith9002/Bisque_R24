@@ -331,9 +331,14 @@ cluster6pc <- as.data.frame(cbind(pc_matrix$BN_BNLx6, pc_matrix$SHR1_SHR6, pc_ma
 colnames(cluster0pc) <- c("BNLx", "SHR1", "SHR2")
 rownames(cluster0pc) <- rownames(pc_matrix)
 
-cor_res <- as.data.frame(cor(t(cluster0pc), method = 'pearson'))
-
-res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
+cor_fun <- function(x){
+  # calc correlation
+  cor_res <- as.data.frame(cor(t(cluster0pc), method = 'pearson'))
+  # make pretty
+  res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
     tidyr::pivot_longer(-rowname)
+  # remove rows where gene is correlated with itself
+  
+}
 
 ```
