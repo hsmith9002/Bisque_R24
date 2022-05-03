@@ -338,7 +338,29 @@ cor_fun <- function(x){
   res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
     tidyr::pivot_longer(-rowname)
   # remove rows where gene is correlated with itself
-  
+  clean <- subset(res, res$rowname != res$name)
+  # Identify top 100 most correlated genes
+  out <- clean %>%
+    group_by(rowname) %>%
+    arrange(desc(value)) %>%
+    dplyr::slice(1:10)
 }
+
+```
+
+## PCA Analysis
+
+```{r pca}
+library(stringi)
+oli_pca <- prcomp(pc_matrix)
+oli_pca_df <- as.data.frame(oli_pca$rotation)
+oli_pca_df$Strain <- sapply(strsplit(rownames(oli_pca_df),"_"), `[`, 1)
+oli_pca_df$Cluster <- stri_sub(rownames(oli_pca_df), -1)
+
+
+
+
+
+
 
 ```
