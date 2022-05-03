@@ -206,7 +206,7 @@ ol <- isOutlier(metric = qc$detected, nmads = 2, log = TRUE)
 sce <- sce[, !ol]
 dim(sce)
 
-# remove lowly expressed genes
+#remove lowly expressed genes
 sce <- sce[rowSums(counts(sce) > 1) >= 10, ]
 dim(sce)
 
@@ -230,13 +230,13 @@ sce$id <- paste0(sce$expt, sce$seurat_clusters)
 ##################################
 
 ## Determine the number of cells per sample
-table(sce$expt)
+table(sce$sample_id)
 
 ## Turn named vector into a numeric vector of number of cells per sample
-n_cells <- as.numeric(table(sce$expt))
+n_cells <- as.numeric(table(sce$sample_id))
 
 ## Determine how to reoder the samples (rows) of the metadata to match the order of sample names in sids vector
-m <- match(sids, sce$expt)
+m <- match(sids, sce$sample_id)
 
 ## Create the sample level metadata by combining the reordered metadata with the number of cells corresponding to each sample.
 # ei <- data.frame(colData(sce)[m, ], 
@@ -248,24 +248,24 @@ m <- match(sids, sce$expt)
 # Dimension Reduction and Plotting
 #####################################################
 
-# compute UMAP using 1st 20 PCs
-sce <- runUMAP(sce, pca = 20)
-
-# wrapper to prettify reduced dimension plots
-.plot_dr <- function(sce, dr, col)
-  plotReducedDim(sce, dimred = dr, colour_by = col) +
-    guides(fill = guide_legend(override.aes = list(alpha = 1, size = 3))) +
-    theme_minimal() + theme(aspect.ratio = 1)
-
-# downsample to max. 100 cells per cluster
-cs_by_k <- split(colnames(sce), sce$cluster_id)
-cs100 <- unlist(sapply(cs_by_k, function(u) 
-  sample(u, min(length(u), 100))))
-
-# plot t-SNE & UMAP colored by cluster & group ID
-for (dr in c("TSNE", "UMAP"))
-  for (col in c("seurat_clusters", "expt"))
-    .plot_dr(sce[, cs100], dr, col)
+# # compute UMAP using 1st 20 PCs
+# sce <- runUMAP(sce, pca = 20)
+# 
+# # wrapper to prettify reduced dimension plots
+# .plot_dr <- function(sce, dr, col)
+#   plotReducedDim(sce, dimred = dr, colour_by = col) +
+#     guides(fill = guide_legend(override.aes = list(alpha = 1, size = 3))) +
+#     theme_minimal() + theme(aspect.ratio = 1)
+# 
+# # downsample to max. 100 cells per cluster
+# cs_by_k <- split(colnames(sce), sce$cluster_id)
+# cs100 <- unlist(sapply(cs_by_k, function(u) 
+#   sample(u, min(length(u), 100))))
+# 
+# # plot t-SNE & UMAP colored by cluster & group ID
+# for (dr in c("TSNE", "UMAP"))
+#   for (col in c("seurat_clusters", "expt"))
+#     .plot_dr(sce[, cs100], dr, col)
 
 #####################################################
 # Aggregate the counts per sample_id and cluster_id
@@ -274,9 +274,14 @@ for (dr in c("TSNE", "UMAP"))
 # Subset metadata to only include the cluster and sample IDs to aggregate across
 groups <- colData(sce)[, c("cluster_id", "sample_id")]
 
+# pb_mus_byCluster <- aggregateData(sce,
+#     assay = "counts", fun = "sum",
+#     by = c("cluster_id"))
+# head(assay(pb_mus_byCluster))
+
 pb_mus <- aggregateData(sce,
     assay = "counts", fun = "sum",
-    by = c("cluster_id", "sample_id"))
+    by = c("sample_id"))
 head(assay(pb_mus))
 
 #####################################################
@@ -333,7 +338,7 @@ rownames(cluster0pc) <- rownames(pc_matrix)
 
 cor_fun <- function(x){
   # calc correlation
-  cor_res <- as.data.frame(cor(t(cluster0pc), method = 'pearson'))
+  cor_res <- as.data.frame(cor(t(x), method = 'pearson'))
   # make pretty
   res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
     tidyr::pivot_longer(-rowname)
@@ -344,7 +349,16 @@ cor_fun <- function(x){
     group_by(rowname) %>%
     arrange(desc(value)) %>%
     dplyr::slice(1:10)
+  #caclulate average correlations
+  cor_avg <- out %>%
+    group_by(rowname) %>%
+    summarize(mean_cor = mean(value, na.rm = TRUE))
+  mean_all <- mean(cor_avg$mean_cor, na.rm = TRUE)
+  list_out <- list("rawResults" = out, "CorAvgs" = cor_avg, "OverallAgv" = mean_all )
+  return(list_out)
 }
+
+c1_cor <- cor_fun(cluster0pc)
 
 ```
 
@@ -352,10 +366,14 @@ cor_fun <- function(x){
 
 ```{r pca}
 library(stringi)
+library(ggfortify)
 oli_pca <- prcomp(pc_matrix)
 oli_pca_df <- as.data.frame(oli_pca$rotation)
 oli_pca_df$Strain <- sapply(strsplit(rownames(oli_pca_df),"_"), `[`, 1)
 oli_pca_df$Cluster <- stri_sub(rownames(oli_pca_df), -1)
+
+p <- ggplot(data = oli_pca_df, aes(x = PC1, y = PC2, color = Strain, shape = Cluster)) +
+  geom_point(alpha = 5.0)
 
 
 
