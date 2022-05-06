@@ -372,7 +372,7 @@ oli_pca_df <- as.data.frame(oli_pca$rotation)
 oli_pca_df$Strain <- sapply(strsplit(rownames(oli_pca_df),"_"), `[`, 1)
 oli_pca_df$Cluster <- stri_sub(rownames(oli_pca_df), -1)
 
-p <- ggplot(data = oli_pca_df, aes(x = PC1, y = PC2, color = Strain, shape = Cluster)) +
+p <- ggplot(data = oli_pca_df, aes(x = PC1, y = PC2, color = Cluster, shape = Strain)) +
   geom_point(alpha = 5.0)
 
 
