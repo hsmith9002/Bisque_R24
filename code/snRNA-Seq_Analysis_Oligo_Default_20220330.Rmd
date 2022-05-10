@@ -885,6 +885,64 @@ saveRDS(oligos_sub, file = paste0(data_dir, "/", "oligos_subcluster.rds"))
 write.csv(oligos_sub@assays$RNA@counts, file = paste0(data_dir, "/", "oligos_subcluster_UMI_counts.csv"))
 ```
 
+## UMAP without Neuron cluster
+
+```{r no_neuron_umap}
+# inport oligo seurat object
+oligos <- readRDS(file = paste0(data_dir, "/", "oligos_default.rds"))
+
+# copy to a new object for subsetting
+oligos_nn <- oligos
+
+# subset seurat object (clusters 1,2,3,6)
+oligos_nn <- subset(oligos_nn, idents = c(1,2,3,4,5,6))
+
+# identify variable genes
+oligos_nn <- FindVariableFeatures(
+  oligos_nn,
+  selection.method = "vst",
+  verbose = TRUE)
+
+# Identify the 10 most highly variable genes
+top10_sub <- head(VariableFeatures(oligos_nn), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(oligos_nn)
+plot2 <- LabelPoints(plot = plot1, points = top10_sub, repel = TRUE, xnudge = 0, ynudge = 0)
+plot2
+
+# scale data
+all.genes <- rownames(oligos_nn)
+oligos_nn <- ScaleData(oligos_nn, features = all.genes, split.by = 'expt')
+
+# run PCA
+oligos_nn <- RunPCA(oligos_nn, features = VariableFeatures(object = oligos_nn))
+
+VizDimLoadings(oligos_nn, dims = 1:2, reduction = "pca")
+
+DimPlot(oligos_nn, reduction = "pca")
+DimPlot(oligos_nn, reduction = "pca", split.by = 'expt')
+
+# jackstraw
+oligos_nn <- JackStraw(oligos_nn, num.replicate = 100)
+oligos_nn <- ScoreJackStraw(oligos_nn, dims = 1:20)
+
+# find neighbors
+oligos_nn <- FindNeighbors(oligos_nn, dims = 1:20)
+oligos_nn <- FindClusters(oligos_nn, resolution = 0.5)
+ElbowPlot(oligos_nn)
+
+# run UMAP
+oligos_nn <- RunUMAP(oligos_nn, dims = 1:20)
+
+DimPlot(oligos_nn, reduction = "umap")
+
+DimPlot(oligos_nn, reduction = "umap", split.by = 'expt', ncol = 2)
+
+# save Seurat Object
+saveRDS(oligos_nn, file = paste0(data_dir, "/", "oligos_noneurons.rds"))
+```
+
 ## get cell proportions by cluster
 
 ```{r cell_prop, eval=FALSE}

@@ -1,5 +1,5 @@
 ---
-title: "Oligos Correlation and PSA Ananlysis"
+title: "Oligos Correlation and PSA Without Neurons"
 author: "Harry Smith"
 date: "R Sys.Date()"
 output:
@@ -51,11 +51,14 @@ Sample | Description
 8_SHR_2_Oligos | SHR Biological Replicate 2  
 
 ```{r import data}
-# import oligo data sets
-oligos <- readRDS(file = paste0(data_dir, "/", "oligos_default.rds"))
+# # import oligo data sets
+# oligos <- readRDS(file = paste0(data_dir, "/", "oligos_default.rds"))
+# 
+# # sub cluster seurat object
+# oligos_sub <- readRDS(file = paste0(data_dir, "/", "oligos_subcluster.rds"))
 
-# sub cluster seurat object
-oligos_sub <- readRDS(file = paste0(data_dir, "/", "oligos_subcluster.rds"))
+# no neuron suerat object
+oligos <- readRDS(file = paste0(data_dir, "/", "oligos_noneurons.rds"))
 
 ```
 
@@ -159,25 +162,25 @@ table(sce$seurat_clusters, sce$expt)
 
 ```{r gene_correlation}
 library(qlcMatrix)
-# Calculate spearman correlations on all genes by cluster
-test <- as.data.frame(pb$`0`)
-test <- data.table(test)
-test_t <- as.data.frame(t(test))
-colnames(test_t) <- rownames(pb$`0`)
-
-# get vector of variable genes
-vargenes <- VariableFeatures(oligos_sub)
-
-#subset test_t to only inlcude variable genes
-test_t <- test_t[, which(colnames(test_t) %in% vargenes)]
-
-cor_res <- as.data.frame(corSparse(test_t))
-
-colnames(cor_res) <- colnames(test_t)
-rownames(cor_res) <- colnames(test_t)
-
-res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
-    tidyr::pivot_longer(-rowname)
+# # Calculate spearman correlations on all genes by cluster
+# test <- as.data.frame(pb$`0`)
+# test <- data.table(test)
+# test_t <- as.data.frame(t(test))
+# colnames(test_t) <- rownames(pb$`0`)
+# 
+# # get vector of variable genes
+# vargenes <- VariableFeatures(oligos_sub)
+# 
+# #subset test_t to only inlcude variable genes
+# test_t <- test_t[, which(colnames(test_t) %in% vargenes)]
+# 
+# cor_res <- as.data.frame(corSparse(test_t))
+# 
+# colnames(cor_res) <- colnames(test_t)
+# rownames(cor_res) <- colnames(test_t)
+# 
+# res <- cor_res %>% as.data.frame %>% tibble::rownames_to_column() %>% 
+#     tidyr::pivot_longer(-rowname)
 
 ```
 
@@ -280,7 +283,7 @@ groups <- colData(sce)[, c("cluster_id", "sample_id")]
 # head(assay(pb_mus_byCluster))
 
 pb_mus <- aggregateData(sce,
-    assay = "logcounts", fun = "sum",
+    assay = "logcounts", fun = "mean",
     by = c("sample_id"))
 head(assay(pb_mus))
 
@@ -373,7 +376,7 @@ oli_pca_df$Strain <- sapply(strsplit(rownames(oli_pca_df),"_"), `[`, 1)
 oli_pca_df$Cluster <- stri_sub(rownames(oli_pca_df), -1)
 
 p <- ggplot(data = oli_pca_df, aes(x = PC1, y = PC2, color = Cluster, shape = Strain, size = 2)) +
-  geom_point(alpha = 5.0) + xlab("PC1 (72%)") + ylab("PC2 (14%)") +theme_classic()
+  geom_point(alpha = 5.0) + xlab("PC1 (58%)") + ylab("PC2 (13%)") +theme_classic()
 
 
 
