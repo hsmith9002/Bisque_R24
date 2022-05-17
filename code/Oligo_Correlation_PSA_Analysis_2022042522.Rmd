@@ -280,9 +280,14 @@ groups <- colData(sce)[, c("cluster_id", "sample_id")]
 # head(assay(pb_mus_byCluster))
 
 pb_mus <- aggregateData(sce,
-    assay = "logcounts", fun = "sum",
+    assay = "logcounts", fun = "mean",
     by = c("sample_id"))
 head(assay(pb_mus))
+
+pb_mus_cnts <- aggregateData(sce,
+    assay = "counts", fun = "sum",
+    by = c("sample_id"))
+
 
 #####################################################
 # Sample level DS Ananlysis
@@ -306,6 +311,8 @@ head(assay(pb_mus))
 library(qlcMatrix)
 
 pc_matrix <- as.data.frame(assay((pb_mus)))
+
+cnt_matrix <- as.data.frame(assay(pb_mus_cnts))
 
 # build data frames by cluster
 cluster0pc <- as.data.frame(cbind(pc_matrix$BN_BNLx0, pc_matrix$SHR1_SHR0, pc_matrix$SHR2_SHR0))
@@ -359,6 +366,72 @@ cor_fun <- function(x){
 }
 
 c1_cor <- cor_fun(cluster0pc)
+
+# Identify Out of 5K genes, how many have more than 5 read in all samples in at least 1 cluster
+
+# check to see if gene has > 5 reads for each sample and cluster
+ch1_out <- list()
+for(i in seq_along(colnames(cnt_matrix))){
+  check1 <- ifelse(cnt_matrix[, i] > 5, 1, 0)
+  ch1_out[[i]] <- check1
+}
+
+# add above results to cnt_matrix
+cnt_matrix$BN_BNLx0_ch1 <- ch1_out[[1]]
+cnt_matrix$BN_BNLx1_ch1 <- ch1_out[[2]]
+cnt_matrix$BN_BNLx2_ch1 <- ch1_out[[3]]
+cnt_matrix$BN_BNLx3_ch1 <- ch1_out[[4]]
+cnt_matrix$BN_BNLx4_ch1 <- ch1_out[[5]]
+cnt_matrix$BN_BNLx5_ch1 <- ch1_out[[6]]
+cnt_matrix$BN_BNLx6_ch1 <- ch1_out[[7]]
+cnt_matrix$SHR1_SHR0_ch1 <- ch1_out[[8]]
+cnt_matrix$SHR1_SHR1_ch1 <- ch1_out[[9]]
+cnt_matrix$SHR1_SHR2_ch1 <- ch1_out[[10]]
+cnt_matrix$SHR1_SHR3_ch1 <- ch1_out[[11]]
+cnt_matrix$SHR1_SHR4_ch1 <- ch1_out[[12]]
+cnt_matrix$SHR1_SHR5_ch1 <- ch1_out[[13]]
+cnt_matrix$SHR1_SHR6_ch1 <- ch1_out[[14]]
+cnt_matrix$SHR2_SHR0_ch1 <- ch1_out[[15]]
+cnt_matrix$SHR2_SHR1_ch1 <- ch1_out[[16]]
+cnt_matrix$SHR2_SHR2_ch1 <- ch1_out[[17]]
+cnt_matrix$SHR2_SHR3_ch1 <- ch1_out[[18]]
+cnt_matrix$SHR2_SHR4_ch1 <- ch1_out[[19]]
+cnt_matrix$SHR2_SHR5_ch1 <- ch1_out[[20]]
+cnt_matrix$SHR2_SHR6_ch1 <- ch1_out[[21]]
+
+# create a df of ch1 results for each sample - If there is a 1, that means that gene had > 5 reads in that sample_cluster combo
+ch1_df <- cnt_matrix[, 22:42]
+ch1_bn1 <- ch1_df[, 1:7]
+ch1_shr1 <- ch1_df[, 8:14]
+ch1_shr2 <- ch1_df[, 15:21]
+
+# sum each row to. If sum is > 1 then 1 else 0 - the reason for doing this is that if the sum is > 1, then that means that gene has > 5 reads in at least one cluster for that given sample
+bn_sum <- apply(ch1_bn1, 1, sum)
+shr1_sum <- apply(ch1_shr1, 1, sum)
+shr2_sum <- apply(ch1_shr2, 1, sum)
+
+# add sum results back to ch1 df
+ch1_df$bn_sum <- bn_sum
+ch1_df$shr1_sum <- shr1_sum
+ch1_df$shr2_sum <- shr2_sum
+
+# extract sum results as df. The reason for this is to keep the gene names
+check_sum_df <- ch1_df[, 22:24]
+
+# check to see if number for each sample is > 0. If it is that means that gene has > 5 read counts in at least 1 cluster in all 3 samples. Change this data frame from numbers to TRUE/FALSE
+check_sum_df$bn_logic <- ifelse(check_sum_df$bn_sum > 0, TRUE, FALSE)
+check_sum_df$shr1_logic <- ifelse(check_sum_df$shr1_sum > 0, TRUE, FALSE)
+check_sum_df$shr2_logic <- ifelse(check_sum_df$shr2_sum > 0, TRUE, FALSE)
+
+# Extract logic results into a df
+check_logic_df <- check_sum_df[, 4:6]
+
+# create a vector that if the sum of each row/gene is > 0 then TRUE, else FALSE. This vectore can then be summed to let us know how many genes have > 5 reads in all samples in at least one sample, and can also be used to index the gene list or original count matrix.
+
+final_check_sum <- apply(check_logic_df, 1, sum)
+final_check_index <- ifelse(final_check_sum == 3, TRUE, FALSE)
+sum(final_check_index)
+sum(final_check_index)/length(final_check_index)
 
 ```
 
