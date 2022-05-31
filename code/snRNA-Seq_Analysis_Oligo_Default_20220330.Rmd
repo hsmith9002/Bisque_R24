@@ -943,6 +943,19 @@ DimPlot(oligos_nn, reduction = "umap", split.by = 'expt', ncol = 2)
 saveRDS(oligos_nn, file = paste0(data_dir, "/", "oligos_noneurons.rds"))
 ```
 
+```{r find_markers_nn, eval=FALSE}
+# find markers for every cluster compared to all remaining cells, report only the positive
+# ones
+
+
+oligos_nn.markers <- FindAllMarkers(oligos_nn, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+oligos_nn.markers %>%
+    group_by(cluster) %>%
+    slice_max(n = 2, order_by = avg_log2FC)
+
+write_csv(oligos_nn.markers, file = paste0(data_dir, "/", "oligos_all_markers_nn.csv"))
+```
+
 ## get cell proportions by cluster
 
 ```{r cell_prop, eval=FALSE}

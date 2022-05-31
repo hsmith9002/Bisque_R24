@@ -442,16 +442,19 @@ library(stringi)
 library(ggfortify)
 oli_pca <- prcomp(pc_matrix)
 oli_pca_df <- as.data.frame(oli_pca$rotation)
-oli_pca_df$Strain <- sapply(strsplit(rownames(oli_pca_df),"_"), `[`, 1)
+oli_pca_df$Strain1 <- sapply(strsplit(rownames(oli_pca_df),"_"), `[`, 1)
 oli_pca_df$Cluster <- stri_sub(rownames(oli_pca_df), -1)
+oli_pca_df$Strain <- c(rep("BNLx", 7), rep("SHR", 14))
 
 p <- ggplot(data = oli_pca_df, aes(x = PC1, y = PC2, color = Cluster, shape = Strain, size = 2)) +
   geom_point(alpha = 5.0) + xlab("PC1 (72%)") + ylab("PC2 (14%)") +theme_classic()
+ggsave(p, filename = "oligo_nn_PCAPlot", device = "pdf", path = data_dir)
 
+```
 
+## Differential Expression
 
-
-
+```{r DE_analysis}
 
 
 ```
