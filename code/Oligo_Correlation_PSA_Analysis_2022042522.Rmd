@@ -446,10 +446,61 @@ oli_pca_df$Strain1 <- sapply(strsplit(rownames(oli_pca_df),"_"), `[`, 1)
 oli_pca_df$Cluster <- stri_sub(rownames(oli_pca_df), -1)
 oli_pca_df$Strain <- c(rep("BNLx", 7), rep("SHR", 14))
 
+
 p <- ggplot(data = oli_pca_df, aes(x = PC1, y = PC2, color = Cluster, shape = Strain, size = 2)) +
   geom_point(alpha = 5.0) + xlab("PC1 (72%)") + ylab("PC2 (14%)") +theme_classic()
 ggsave(p, filename = "oligo_nn_PCAPlot", device = "pdf", path = data_dir)
 
+
+######################################
+# Calculate PC  ratios
+######################################
+
+# Build ratio calculater function
+pca_ratio <- function(df, clN, PC){
+  # build indexes to extract desired values
+  index.shr1 <- rownames(df) == paste0("SHR1_SHR", clN)
+  index.shr2 <- rownames(df) == paste0("SHR2_SHR", clN)
+  index.bn <- rownames(df) == paste0("BN_BNLx", clN)
+  
+  # calculate pca1_shr_clusterN
+  pca1_shr_clusterN <- min(abs((df[index.shr1,PC] - df[index.bn,PC])),
+                           abs((df[index.shr2,PC] - df[index.bn,PC])))
+  
+  # calculate ratio
+  ratio <- (abs((df[index.shr1,PC] - df[index.shr2,PC]))) / 
+           (abs((pca1_shr_clusterN - df[index.bn,PC])))
+  return(ratio)
+}
+
+# calculate pca ratios
+cluster <- c(0:6)
+pca1_ratio_vec <- c()
+for(i in 1:7){
+  a <- pca_ratio(oli_pca_df, cluster[i], 1)
+  pca1_ratio_vec[i] <- a
+}
+pca2_ratio_vec <- c()
+for(i in 1:7){
+  a <- pca_ratio(oli_pca_df, cluster[i], 2)
+  pca2_ratio_vec[i] <- a
+}
+  
+# build data frame for plotting
+ratio_df <- as.data.frame(cbind(pca1_ratio_vec, pca2_ratio_vec))
+colnames(ratio_df) <- c("PC_1", "PC_2")
+ratio_df$Cluster <- c(paste0(rep("C_", 7), 0:6))
+
+ratio_df <- data.frame("Cluster" = rep(c(paste0(rep("C_", 7), 0:6)),2), 
+                       "Ratio" = c(pca1_ratio_vec, pca2_ratio_vec),
+                       "PC" = as.factor(c(rep("P_C1", 7), rep("PC_2", 7))))
+
+ratio_plot <- ggplot(ratio_df) + 
+  geom_point(aes(Ratio, Cluster, color = PC, shape = PC, size = 3)) + 
+  theme_classic() +
+  xlab("Ratio") + ylab("Cluster")
+
+ggsave(ratio_plot, filename = "oligo_PC_Ratio_Plot", device = "pdf", path = data_dir)
 ```
 
 ## Differential Expression

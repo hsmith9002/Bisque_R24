@@ -977,6 +977,13 @@ oligos_sub.markers %>%
 write_csv(oligos_sub.markers, file = paste0(data_dir, "/", "oligos_all_markers_subclusters.csv"))
 ```
 
+```{r pca_ratio}
+oligos_nn <- readRDS(file = paste0(data_dir, "/", "oligos_noneurons.rds"))
+
+my.data=FetchData(oligos_nn,c("ident","PC_1","orig.ident"))
+
+```
+
 ## Session Info
 ```{r ses}
 sessionInfo()
